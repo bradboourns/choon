@@ -1,0 +1,7 @@
+@import "tailwindcss";
+
+:root { color-scheme: dark; }
+body { font-family: Inter, system-ui, sans-serif; }
+.leaflet-container { font: inherit; }
+a { color: inherit; }
+input, select, textarea { border: 1px solid #3f3f46; }

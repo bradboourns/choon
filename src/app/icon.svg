@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Choon icon">
+  <defs>
+    <linearGradient id="p" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#34e6ef"/>
+      <stop offset="100%" stop-color="#18b8cf"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="24" fill="#070912"/>
+  <path fill="url(#p)" d="M64 10C35 10 12 33 12 62c0 16 7 31 19 41l28 37a6 6 0 0 0 10 0l28-37c12-10 19-25 19-41 0-29-23-52-52-52Z"/>
+  <circle cx="64" cy="62" r="23" fill="#080a12"/>
+  <path fill="#f7df1e" d="M60 48v20a12 12 0 1 0 8 11V54c7 1 12 7 12 14a4 4 0 0 0 8 0c0-12-10-22-22-22h-6Z"/>
+</svg>
