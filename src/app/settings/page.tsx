@@ -15,7 +15,7 @@ export default async function SettingsPage() {
       <h1 className='text-3xl font-bold'>Settings</h1>
       <section className='rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
         <h2 className='text-lg font-semibold'>Account</h2>
-        <p className='mt-2 text-zinc-300'>Login: {session.email}</p>
+        <p className='mt-2 text-zinc-300'>Username: {session.username}</p>
         <p className='text-zinc-300'>Role: {session.role}</p>
       </section>
       <section className='rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
@@ -26,7 +26,7 @@ export default async function SettingsPage() {
       </section>
       <section className='rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
         <h2 className='text-lg font-semibold'>Notifications</h2>
-        <p className='mt-2 text-zinc-300'>Email updates are currently enabled for saved gigs and moderation alerts.</p>
+        <p className='mt-2 text-zinc-300'>In-app updates are enabled for saved gigs and moderation alerts.</p>
       </section>
     </div>
   );
