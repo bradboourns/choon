@@ -8,7 +8,7 @@ import { requestPartnershipAction, respondPartnershipAction } from '@/app/action
 const roleLabel: Record<string, string> = {
   admin: 'Platform admin',
   artist: 'Artist',
-  venue_admin: 'Venue admin',
+  venue_admin: 'Venue management account',
   user: 'Music fan',
 };
 
@@ -93,7 +93,10 @@ export default async function DashboardPage() {
       : [];
 
   const artists = session.role === 'venue_admin'
-    ? db.prepare('SELECT id, display_name FROM artists ORDER BY display_name').all() as Array<{ id: number; display_name: string }>
+    ? db.prepare(`SELECT MIN(id) id, display_name
+      FROM artists
+      GROUP BY display_name
+      ORDER BY display_name ASC`).all() as Array<{ id: number; display_name: string }>
     : [];
 
   const fanStats = session.role === 'user'
@@ -229,7 +232,7 @@ export default async function DashboardPage() {
               <div className='grid gap-2 sm:grid-cols-2'>
                 <select name='venue_id' required className='rounded bg-zinc-950 p-2'>
                   <option value=''>Select venue</option>
-                  {(db.prepare('SELECT id, name FROM venues WHERE approved=1 ORDER BY name').all() as Array<{ id: number; name: string }>).map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
+                  {(db.prepare(`SELECT MIN(id) id, name FROM venues WHERE approved=1 GROUP BY name ORDER BY name`).all() as Array<{ id: number; name: string }>).map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
                 </select>
                 <input type='hidden' name='artist_id' value={artistProfile.id} />
                 <div className='rounded bg-zinc-950 p-2 text-sm text-zinc-300'>{artistProfile.display_name}</div>

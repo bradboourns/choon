@@ -135,12 +135,15 @@ export async function createGigAction(formData: FormData) {
   const posterUrl = String(formData.get('poster_url') || '').trim();
   const artistIdRaw = Number(formData.get('artist_id') || 0);
   const artistId = Number.isFinite(artistIdRaw) && artistIdRaw > 0 ? artistIdRaw : null;
+  const popupCollectiveRaw = Number(formData.get('popup_collective_id') || 0);
+  const popupCollectiveId = Number.isFinite(popupCollectiveRaw) && popupCollectiveRaw > 0 ? popupCollectiveRaw : null;
 
-  db.prepare(`INSERT INTO gigs (venue_id,artist_name,artist_id,date,start_time,end_time,price_type,ticket_price,ticket_url,description,genres,vibe_tags,poster_url,status,needs_review,created_by_user_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+  db.prepare(`INSERT INTO gigs (venue_id,artist_name,artist_id,popup_collective_id,date,start_time,end_time,price_type,ticket_price,ticket_url,description,genres,vibe_tags,poster_url,status,needs_review,created_by_user_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     venueId,
     String(formData.get('artist_name')),
     artistId,
+    popupCollectiveId,
     String(formData.get('date')),
     String(formData.get('start_time')),
     String(formData.get('end_time') || ''),

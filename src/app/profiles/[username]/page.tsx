@@ -5,7 +5,7 @@ import { getSession } from '@/lib/auth';
 const roleLabel: Record<string, string> = {
   admin: 'Platform admin',
   artist: 'Artist account',
-  venue_admin: 'Venue account',
+  venue_admin: 'Venue management account',
   user: 'Fan account',
 };
 
@@ -47,8 +47,9 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     ? db.prepare(`SELECT
         (SELECT COUNT(*) FROM saved_gigs WHERE user_id = ?) AS saved_pages,
         (SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS artists_followed,
+        (SELECT COUNT(*) FROM venue_follows WHERE user_id = ?) AS venues_followed,
         (SELECT COUNT(*) FROM gig_interest WHERE user_id = ? AND status = 'going') AS marked_going
-      `).get(account.id, account.id, account.id) as { saved_pages: number; artists_followed: number; marked_going: number }
+      `).get(account.id, account.id, account.id, account.id) as { saved_pages: number; artists_followed: number; venues_followed: number; marked_going: number }
     : null;
 
   const artistProfile = account.role === 'artist'
@@ -97,9 +98,10 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       <StatCard label='Total accounts' value={adminStats.total_accounts} />
     </section>}
 
-    {fanStats && <section className='grid gap-3 rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4 sm:grid-cols-3'>
+    {fanStats && <section className='grid gap-3 rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4 sm:grid-cols-4'>
       <StatCard label='Saved pages' value={fanStats.saved_pages} />
       <StatCard label='Artists followed' value={fanStats.artists_followed} />
+      <StatCard label='Venues followed' value={fanStats.venues_followed} />
       <StatCard label='Marked going' value={fanStats.marked_going} />
     </section>}
 
@@ -118,7 +120,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
     {account.role === 'venue_admin' && <section className='space-y-3 rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
       <h2 className='text-xl font-semibold'>Managed venues</h2>
-      {managedVenues.length > 1 && <p className='text-sm text-zinc-400'>This account acts as a master venue account with access to multiple individual venues.</p>}
+      {managedVenues.length > 1 && <p className='text-sm text-zinc-400'>This venue management account can manage multiple individual venues.</p>}
       {managedVenues.length === 0 ? <p className='text-sm text-zinc-400'>No approved venue memberships yet.</p> : (
         <div className='grid gap-2'>
           {managedVenues.map((venue) => <Link key={venue.id} href={`/venues/${venue.id}`} className='rounded border border-zinc-700 bg-zinc-950/70 p-3 text-sm hover:bg-zinc-900'>

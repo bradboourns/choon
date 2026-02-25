@@ -17,6 +17,9 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       ORDER BY venues.approved DESC, venues.name`).all(session.id) as any[]
     : db.prepare('SELECT * FROM venues WHERE approved=1 ORDER BY name').all() as any[];
 
+
+  const popupCollectives = db.prepare('SELECT id, name, region FROM popup_collectives WHERE approved=1 ORDER BY name').all() as Array<{ id: number; name: string; region: string }>;
+
   const partneredArtists = session.role === 'venue_admin'
     ? db.prepare(`SELECT artists.id, artists.display_name
       FROM partnerships
@@ -36,6 +39,7 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       genres={genres}
       vibes={vibes}
       partneredArtists={partneredArtists}
+      popupCollectives={popupCollectives}
       role={session.role}
     />
   </div>;
