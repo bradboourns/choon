@@ -11,7 +11,8 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
   return <article className='space-y-4'>
     <img src={gig.poster_url || 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1200'} alt={gig.artist_name} className='h-64 w-full rounded-2xl object-cover'/>
     <h1 className='text-3xl font-bold'>{gig.artist_name}</h1>
-    <p>{gig.venue_name} · {gig.address}, {gig.suburb} {gig.postcode}</p>
+    <p><Link href={`/venues/${gig.venue_id}`} className='text-violet-300 hover:text-violet-200'>{gig.venue_name}</Link> · {gig.address}, {gig.suburb} {gig.postcode}</p>
+    {gig.artist_id && <p><Link href={`/artists/${gig.artist_id}`} className='text-violet-300 hover:text-violet-200'>View artist information page</Link></p>}
     <p>{formatDateDDMMYYYY(gig.date)} at {formatTime(gig.start_time, '12h')}</p>
     <p>{gig.price_type === 'Free' ? 'Free entry' : `Ticket price: $${Number(gig.ticket_price || 0).toFixed(2)}`}</p>
     <p>{gig.description}</p>

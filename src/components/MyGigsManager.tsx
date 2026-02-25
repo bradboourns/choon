@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { updateGigAction, updateGigDetailsAction } from '@/app/actions';
 import { formatDateDDMMYYYY, formatTime } from '@/lib/format';
@@ -19,7 +20,7 @@ type Gig = {
   status: string;
 };
 
-export default function MyGigsManager({ gigs, timeFormat }: { gigs: Gig[]; timeFormat: '12h' | '24h' }) {
+export default function MyGigsManager({ gigs, timeFormat, title = 'My gigs', backHref, selectedVenueName }: { gigs: Gig[]; timeFormat: '12h' | '24h'; title?: string; backHref?: string; selectedVenueName?: string }) {
   const [view, setView] = useState<'day' | 'calendar'>('day');
   const [editingGigId, setEditingGigId] = useState<number | null>(null);
 
@@ -36,7 +37,11 @@ export default function MyGigsManager({ gigs, timeFormat }: { gigs: Gig[]; timeF
 
   return <div className='space-y-3'>
     <div className='flex items-center justify-between'>
-      <h1 className='text-2xl font-bold'>My gigs</h1>
+      <div>
+        {backHref && <Link href={backHref} className='mb-2 inline-flex text-sm text-zinc-300 hover:text-zinc-100'>← Back</Link>}
+        <h1 className='text-2xl font-bold'>{title}</h1>
+        {selectedVenueName && <p className='text-sm text-zinc-400'>Currently selected venue: <span className='font-medium text-zinc-200'>{selectedVenueName}</span></p>}
+      </div>
       <div className='rounded border border-zinc-700 p-1 text-sm'>
         <button onClick={() => setView('day')} className={`rounded px-3 py-1 ${view === 'day' ? 'bg-violet-600' : ''}`}>By day</button>
         <button onClick={() => setView('calendar')} className={`rounded px-3 py-1 ${view === 'calendar' ? 'bg-violet-600' : ''}`}>Calendar</button>
