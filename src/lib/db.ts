@@ -24,10 +24,10 @@ if (!userColumns.some((column) => column.name === 'email_verified')) {
 }
 
 const standardAccounts = [
-  { email: 'admin.platform@choon.local', role: 'admin', displayName: 'Platform Admin' },
-  { email: 'admin.fan@choon.local', role: 'user', displayName: 'Fan Admin' },
-  { email: 'admin.artist@choon.local', role: 'artist', displayName: 'Artist Admin' },
-  { email: 'admin.venue@choon.local', role: 'venue_admin', displayName: 'Venue Admin' },
+  { email: 'admin', role: 'admin', displayName: 'Platform Admin' },
+  { email: 'fan', role: 'user', displayName: 'Fan Admin' },
+  { email: 'artist', role: 'artist', displayName: 'Artist Admin' },
+  { email: 'venue', role: 'venue_admin', displayName: 'Venue Admin' },
 ] as const;
 
 const existingUsers = db.prepare('SELECT email, role FROM users ORDER BY email').all() as Array<{ email: string; role: string }>;
@@ -62,20 +62,35 @@ if (existingSignature !== expectedSignature) {
   tx();
 }
 
-const venueCount = db.prepare('SELECT COUNT(*) count FROM venues').get() as { count: number };
-if (venueCount.count === 0) {
+const goldCoastVenues = [
+  { name: 'Miami Marketta', address: '23 Hillcrest Parade', suburb: 'Miami', city: 'Gold Coast', state: 'QLD', postcode: '4220', lat: -28.0747, lng: 153.4438, website: 'https://www.miamimarketta.com', instagram: 'miamimarketta' },
+  { name: 'Vinnie\'s Dive Bar', address: '44A Nerang St', suburb: 'Southport', city: 'Gold Coast', state: 'QLD', postcode: '4215', lat: -27.9697, lng: 153.4094, website: 'https://vinniesdivebar.com.au', instagram: 'vinniesdive' },
+  { name: 'HOTA Outdoor Stage', address: '135 Bundall Rd', suburb: 'Surfers Paradise', city: 'Gold Coast', state: 'QLD', postcode: '4217', lat: -28.0032, lng: 153.4177, website: 'https://hota.com.au', instagram: 'hotagc' },
+] as const;
+
+const existingVenues = db.prepare('SELECT name, city FROM venues ORDER BY name').all() as Array<{ name: string; city: string }>;
+const existingVenueSignature = JSON.stringify(existingVenues);
+const expectedVenueSignature = JSON.stringify(
+  [...goldCoastVenues]
+    .map(({ name, city }) => ({ name, city }))
+    .sort((a, b) => a.name.localeCompare(b.name)),
+);
+
+if (existingVenueSignature !== expectedVenueSignature) {
   db.exec(`
+  DELETE FROM gigs;
+  DELETE FROM venues;
   INSERT INTO venues (name,address,suburb,city,state,postcode,lat,lng,website,instagram,approved) VALUES
-  ('The Tote','71 Johnston St','Collingwood','Melbourne','VIC','3066',-37.7962,144.9783,'https://thetotehotel.com','thetotehotel',1),
-  ('Northcote Social Club','301 High St','Northcote','Melbourne','VIC','3070',-37.7695,144.9985,'https://northcotesocialclub.com','northcotesc',1),
-  ('Oxford Art Factory','38-46 Oxford St','Darlinghurst','Sydney','NSW','2010',-33.8784,151.2156,'https://oxfordartfactory.com','oxfordartfactory',1);
+  ('Miami Marketta','23 Hillcrest Parade','Miami','Gold Coast','QLD','4220',-28.0747,153.4438,'https://www.miamimarketta.com','miamimarketta',1),
+  ('Vinnie''s Dive Bar','44A Nerang St','Southport','Gold Coast','QLD','4215',-27.9697,153.4094,'https://vinniesdivebar.com.au','vinniesdive',1),
+  ('HOTA Outdoor Stage','135 Bundall Rd','Surfers Paradise','Gold Coast','QLD','4217',-28.0032,153.4177,'https://hota.com.au','hotagc',1);
   `);
 }
 
 const gigCount = db.prepare('SELECT COUNT(*) count FROM gigs').get() as { count: number };
 if (gigCount.count === 0) {
   const fallbackCreator =
-    (db.prepare("SELECT id FROM users WHERE email = 'admin.platform@choon.local'").get() as { id: number } | undefined)?.id || 1;
+    (db.prepare("SELECT id FROM users WHERE email = 'admin'").get() as { id: number } | undefined)?.id || 1;
   db.exec(`
   INSERT INTO gigs (venue_id,artist_name,date,start_time,price_type,ticket_url,description,genres,vibe_tags,status,created_by_user_id,poster_url)
   VALUES

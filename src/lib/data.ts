@@ -6,7 +6,7 @@ export const vibes = ['Chill', 'Loud', 'Sweaty', 'Underground', 'Date night', 'D
 export function getGigs(filters: any = {}) {
   let q = `SELECT gigs.*, venues.name venue_name, venues.suburb, venues.city, venues.address, venues.lat, venues.lng
            FROM gigs JOIN venues ON gigs.venue_id = venues.id
-           WHERE gigs.status='approved' AND venues.approved=1`;
+           WHERE gigs.status='approved' AND venues.approved=1 AND venues.city='Gold Coast'`;
   const args: any[] = [];
   if (filters.search) {
     q += ` AND (gigs.artist_name LIKE ? OR venues.name LIKE ? OR venues.suburb LIKE ? OR venues.city LIKE ?)`;

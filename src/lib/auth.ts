@@ -7,8 +7,21 @@ const secret = new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-c
 
 export type SessionUser = { id: number; email: string; role: string };
 
+const adminLoginAliases: Record<string, string> = {
+  admin: 'admin',
+  fan: 'fan',
+  artist: 'artist',
+  venue: 'venue',
+};
+
+function normalizeLoginIdentifier(value: string) {
+  const normalized = value.trim().toLowerCase();
+  return adminLoginAliases[normalized] || normalized;
+}
+
 export async function signIn(email: string, password: string) {
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+  const loginIdentifier = normalizeLoginIdentifier(email);
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(loginIdentifier) as any;
   if (!user || !(await bcrypt.compare(password, user.password_hash))) return null;
   const token = await new SignJWT({ id: user.id, email: user.email, role: user.role })
     .setProtectedHeader({ alg: 'HS256' })

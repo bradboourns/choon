@@ -23,15 +23,17 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
 
             <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
               {canPostGig && <Link href="/create-gig" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Post gig</Link>}
-              <Link href="/saved" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Saved</Link>
+              {session && <Link href="/saved" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Saved</Link>}
               {session?.role === 'admin' && <Link href="/admin" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Admin</Link>}
               {session ? (
                 <details className="relative">
                   <summary className="list-none cursor-pointer rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">
-                    {session.email}
+                    Account
                   </summary>
                   <div className="absolute right-0 mt-2 min-w-44 rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
-                    <p className="px-3 py-2 text-xs uppercase tracking-wide text-zinc-400">Signed in</p>
+                    <Link href="/dashboard" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Dashboard</Link>
+                    <Link href="/analytics" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Analytics</Link>
+                    <Link href="/settings" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Settings</Link>
                     <form action={logoutAction}>
                       <button className="w-full rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Log out</button>
                     </form>
