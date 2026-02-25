@@ -12,7 +12,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   const canPostGig = session?.role === 'artist' || session?.role === 'venue_admin';
 
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className="bg-zinc-950 text-zinc-100">
         <header className="sticky top-0 z-10 border-b border-zinc-800 bg-zinc-950/90 backdrop-blur">
           <nav className="mx-auto flex max-w-6xl items-center justify-between gap-3 p-4">
