@@ -1,11 +1,17 @@
 import db from '@/lib/db';
 import Link from 'next/link';
 import { formatDateDDMMYYYY, formatTime } from '@/lib/format';
+import { getSession } from '@/lib/auth';
 
 export default async function ArtistInfoPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
+  const session = await getSession();
   const artist = db.prepare('SELECT * FROM artists WHERE id=?').get(Number(id)) as any;
   if (!artist) return <p>Artist not found.</p>;
+
+  const followsArtist = session
+    ? Boolean(db.prepare('SELECT 1 FROM artist_follows WHERE user_id = ? AND artist_id = ?').get(session.id, artist.id))
+    : false;
 
   const gigs = db.prepare(`SELECT gigs.id, gigs.date, gigs.start_time, venues.id venue_id, venues.name venue_name
     FROM gigs JOIN venues ON venues.id = gigs.venue_id
@@ -29,6 +35,15 @@ export default async function ArtistInfoPage({ params }: { params: Promise<{ id:
     <Link href='/' className='text-sm text-zinc-300 hover:text-zinc-100'>← Back</Link>
     <h1 className='text-3xl font-bold'>{artist.display_name}</h1>
     {artist.instagram && <a href={`https://instagram.com/${artist.instagram.replace('@', '')}`} className='text-violet-300 hover:text-violet-200'>@{artist.instagram.replace('@', '')}</a>}
+    {session && <form action='/api/follow-artist' method='post' className='inline'>
+      <input type='hidden' name='artist_id' value={artist.id} />
+      <input type='hidden' name='follow' value={followsArtist ? '0' : '1'} />
+      <input type='hidden' name='redirect_to' value={`/artists/${artist.id}`} />
+      <button className='inline-flex items-center gap-1.5 rounded border border-zinc-600 px-3 py-1.5 text-sm'>
+        <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><circle cx='9' cy='8' r='3' /><path d='M4 19c1.5-3 3.8-5 6.5-5' /><path d='M16 7v8M12 11h8' /></svg>
+        {followsArtist ? 'Following artist' : 'Follow artist'}
+      </button>
+    </form>}
 
     <section className='grid gap-3 rounded-xl border border-zinc-700 bg-zinc-900/50 p-4 sm:grid-cols-3'>
       <div className='rounded-lg border border-zinc-800 bg-zinc-950/50 p-3'>

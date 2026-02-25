@@ -46,6 +46,11 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
 
+
+function Icon({ path }: { path: string }) {
+  return <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d={path} /></svg>;
+}
+
 const dateTabs = [
   { key: 'all', label: 'All Dates' },
   { key: 'live', label: 'Live now' },
@@ -186,13 +191,13 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
 
         <div className="mt-3 flex flex-wrap gap-2">
           <select className="rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm" value={price} onChange={(e) => setPrice(e.target.value)}>
-            <option value="">🎟️ All prices</option>
-            <option value="Free">🟢 Free</option>
-            <option value="Door">🚪 At the door</option>
-            <option value="Ticketed">🎫 Ticketed</option>
+            <option value="">All prices</option>
+            <option value="Free">Free</option>
+            <option value="Door">At the door</option>
+            <option value="Ticketed">Ticketed</option>
           </select>
           <label className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-sm text-zinc-300">
-            📍 Within
+            Within
             <select className="rounded bg-zinc-800 px-2 py-1" value={distanceRangeKm} onChange={(e) => setDistanceRangeKm(Number(e.target.value))}>
               {[5, 10, 15, 25, 40, 60, 100].map((km) => (
                 <option key={km} value={km}>{km} km</option>
@@ -232,13 +237,13 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
                   <div className="relative h-40 border-b border-zinc-800 bg-gradient-to-br from-violet-950/70 via-zinc-900 to-fuchsia-950/50 p-4">
                     <span className="rounded-lg bg-black/45 px-2.5 py-1 text-xs font-semibold text-zinc-200">{formatDateDDMMYYYY(g.date)}</span>
                     <span className="absolute bottom-4 right-4 rounded-lg border border-violet-400/40 bg-violet-600/30 px-2.5 py-1 text-xs font-semibold text-violet-100">
-                      {g.price_type === 'Door' ? `🚪 $${(g.ticket_price ?? 0).toFixed(2)} at door` : g.price_type === 'Free' ? '🟢 Free' : `🎫 From $${(g.ticket_price ?? 0).toFixed(2)}`}
+                      {g.price_type === 'Door' ? `$${(g.ticket_price ?? 0).toFixed(2)} at door` : g.price_type === 'Free' ? 'Free' : `From $${(g.ticket_price ?? 0).toFixed(2)}`}
                     </span>
                   </div>
                   <div className="space-y-2 p-4">
                     <p className="text-2xl font-bold leading-tight">{g.artist_name}</p>
-                    <p className="text-zinc-300">📍 {g.venue_name} · {g.suburb}</p>
-                    <p className="text-zinc-400">🕒 {formatTime(g.start_time, '12h')}</p>
+                    <p className="text-zinc-300">{g.venue_name} · {g.suburb}</p>
+                    <p className="text-zinc-400">{formatTime(g.start_time, '12h')}</p>
                     <p className="text-sm text-zinc-400">{g.distance.toFixed(1)} km away</p>
                     <div className="flex flex-wrap gap-2 pt-1 text-xs">
                       {genres.map((x) => (<span key={x} className="rounded-lg border border-zinc-700 bg-zinc-800/70 px-2 py-1 text-zinc-200">{x}</span>))}
@@ -248,33 +253,33 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
                 </Link>
 
                 <div className="flex flex-wrap gap-2 border-t border-zinc-800 px-4 py-3 text-sm">
-                  <a className="rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800" href={`https://maps.google.com/?q=${encodeURIComponent(`${g.address}, ${g.suburb}, ${g.city}`)}`} target="_blank" rel="noreferrer">🧭 Directions</a>
+                  <a className="inline-flex items-center gap-1.5 rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800" href={`https://maps.google.com/?q=${encodeURIComponent(`${g.address}, ${g.suburb}, ${g.city}`)}`} target="_blank" rel="noreferrer"><Icon path='M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z M12 10h.01' />Directions</a>
                   {isLoggedIn ? (
                     <>
                       <form action="/api/save" method="post">
                         <input type="hidden" name="gig_id" value={g.id} />
                         <input type="hidden" name="action" value={saved ? 'unsave' : 'save'} />
                         <input type="hidden" name="redirect_to" value="/" />
-                        <button className="rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800">{saved ? 'Saved ✓' : 'Save gig'}</button>
+                        <button className="inline-flex items-center gap-1.5 rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800"><Icon path='M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z' />{saved ? 'Saved' : 'Save gig'}</button>
                       </form>
                       <form action="/api/gig-interest" method="post">
                         <input type="hidden" name="gig_id" value={g.id} />
                         <input type="hidden" name="status" value={interest === 'interested' ? 'none' : 'interested'} />
                         <input type="hidden" name="redirect_to" value="/" />
-                        <button className={`rounded border px-2.5 py-1.5 ${interest === 'interested' ? 'border-violet-400 bg-violet-600/40' : 'border-zinc-600 hover:bg-zinc-800'}`}>✨ Interested</button>
+                        <button className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 ${interest === 'interested' ? 'border-violet-400 bg-violet-600/40' : 'border-zinc-600 hover:bg-zinc-800'}`}><Icon path='m12 3 2.8 5.6 6.2.9-4.5 4.4 1.1 6.1L12 17.2 6.4 20l1.1-6.1L3 9.5l6.2-.9L12 3Z' />Interested</button>
                       </form>
                       <form action="/api/gig-interest" method="post">
                         <input type="hidden" name="gig_id" value={g.id} />
                         <input type="hidden" name="status" value={interest === 'going' ? 'none' : 'going'} />
                         <input type="hidden" name="redirect_to" value="/" />
-                        <button className={`rounded border px-2.5 py-1.5 ${interest === 'going' ? 'border-emerald-400 bg-emerald-500/30' : 'border-zinc-600 hover:bg-zinc-800'}`}>✅ Going</button>
+                        <button className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 ${interest === 'going' ? 'border-emerald-400 bg-emerald-500/30' : 'border-zinc-600 hover:bg-zinc-800'}`}><Icon path='m5 12 4 4L19 6' />Going</button>
                       </form>
                       {g.artist_id && (
                         <form action="/api/follow-artist" method="post">
                           <input type="hidden" name="artist_id" value={g.artist_id} />
                           <input type="hidden" name="follow" value={followingArtist ? '0' : '1'} />
                           <input type="hidden" name="redirect_to" value="/" />
-                          <button className={`rounded border px-2.5 py-1.5 ${followingArtist ? 'border-fuchsia-400 bg-fuchsia-500/20' : 'border-zinc-600 hover:bg-zinc-800'}`}>🎤 Follow artist</button>
+                          <button className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 ${followingArtist ? 'border-fuchsia-400 bg-fuchsia-500/20' : 'border-zinc-600 hover:bg-zinc-800'}`}><Icon path='M12 5v14M5 12h14' />{followingArtist ? 'Following artist' : 'Follow artist'}</button>
                         </form>
                       )}
                     </>

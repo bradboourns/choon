@@ -36,7 +36,10 @@ export default async function VenueInfoPage({ params }: { params: Promise<{ id: 
       <input type='hidden' name='venue_id' value={venue.id} />
       <input type='hidden' name='follow' value={followsVenue ? '0' : '1'} />
       <input type='hidden' name='redirect_to' value={`/venues/${venue.id}`} />
-      <button className='rounded border border-zinc-600 px-3 py-1.5 text-sm'>📍 {followsVenue ? 'Following venue' : 'Follow venue'}</button>
+      <button className='inline-flex items-center gap-1.5 rounded border border-zinc-600 px-3 py-1.5 text-sm'>
+        <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d='M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z' /><circle cx='12' cy='10' r='2.5' /></svg>
+        {followsVenue ? 'Following venue' : 'Follow venue'}
+      </button>
     </form>}
 
     <section className='grid gap-3 rounded-xl border border-zinc-700 bg-zinc-900/50 p-4 sm:grid-cols-3'>

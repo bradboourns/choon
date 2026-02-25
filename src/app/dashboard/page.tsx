@@ -93,10 +93,12 @@ export default async function DashboardPage() {
       : [];
 
   const artists = session.role === 'venue_admin'
-    ? db.prepare(`SELECT MIN(id) id, display_name
+    ? db.prepare(`SELECT MIN(artists.id) id, artists.display_name
       FROM artists
-      GROUP BY display_name
-      ORDER BY display_name ASC`).all() as Array<{ id: number; display_name: string }>
+      JOIN users ON users.id = artists.created_by_user_id
+      WHERE users.role = 'artist'
+      GROUP BY LOWER(TRIM(artists.display_name))
+      ORDER BY artists.display_name ASC`).all() as Array<{ id: number; display_name: string }>
     : [];
 
   const fanStats = session.role === 'user'
@@ -158,11 +160,11 @@ export default async function DashboardPage() {
               <div className='space-y-2'>
                 <h3 className='font-semibold'>Upcoming gigs for this venue</h3>
                 {singleVenueUpcoming.length === 0 ? <p className='text-sm text-zinc-400'>No upcoming gigs yet.</p> : singleVenueUpcoming.map((gig) => (
-                  <div key={gig.id} className='rounded-lg border border-zinc-700 bg-zinc-950/60 p-3 text-sm'>
-                    <p className='font-medium'>{gig.artist_id ? <Link href={`/artists/${gig.artist_id}`} className='text-violet-300 hover:text-violet-200'>{gig.artist_name}</Link> : gig.artist_name}</p>
+                  <Link key={gig.id} href={`/gigs/${gig.id}`} className='block rounded-lg border border-zinc-700 bg-zinc-950/60 p-3 text-sm hover:bg-zinc-900'>
+                    <p className='font-medium'>{gig.artist_id ? <span className='text-violet-300 hover:text-violet-200'>{gig.artist_name}</span> : gig.artist_name}</p>
                     <p className='text-zinc-300'>{formatDateDDMMYYYY(gig.date)} · {formatTime(gig.start_time, '12h')}</p>
                     <p className='text-zinc-500'>Status: {gig.status}</p>
-                  </div>
+                  </Link>
                 ))}
               </div>
             </article>
@@ -212,17 +214,22 @@ export default async function DashboardPage() {
           <h2 className='text-xl font-semibold'>Artist & venue partnerships</h2>
 
           {session.role === 'venue_admin' && (
-            <form action={requestPartnershipAction} className='grid gap-2 rounded-lg border border-zinc-800 p-3 md:grid-cols-[1fr_auto]'>
+            <form action={requestPartnershipAction} className='space-y-2 rounded-lg border border-zinc-800 p-3'>
               <div className='grid gap-2 sm:grid-cols-2'>
                 <select name='venue_id' required className='rounded bg-zinc-950 p-2'>
                   <option value=''>Select venue</option>
                   {managedVenues.map((venue) => <option key={venue.id} value={venue.id}>{venue.name}</option>)}
                 </select>
-                <select name='artist_id' required className='rounded bg-zinc-950 p-2'>
-                  <option value=''>Select artist</option>
+                <select name='artist_id' className='rounded bg-zinc-950 p-2'>
+                  <option value=''>Artist does not have an account yet</option>
                   {artists.map((artist) => <option key={artist.id} value={artist.id}>{artist.display_name}</option>)}
                 </select>
               </div>
+              <div className='grid gap-2 sm:grid-cols-2'>
+                <input name='artist_name' className='rounded bg-zinc-950 p-2' placeholder='Artist name (for outreach if no account)' />
+                <input type='email' name='artist_contact_email' className='rounded bg-zinc-950 p-2' placeholder='Artist contact email (for outreach)' />
+              </div>
+              <textarea name='outreach_note' className='w-full rounded bg-zinc-950 p-2 text-sm' placeholder='Optional note for Choon onboarding team' />
               <button className='rounded bg-violet-600 px-3 py-2 text-sm'>Request partnership</button>
             </form>
           )}

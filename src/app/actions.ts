@@ -6,8 +6,10 @@ import { getSession, register, signIn, signOut } from '@/lib/auth';
 
 
 function redirectAfterAuth(role: string) {
-  if (role === 'admin') redirect('/dashboard');
-  redirect('/');
+  if (role === 'user') {
+    redirect('/');
+  }
+  redirect('/dashboard');
 }
 
 const FALLBACK_GIG_DESCRIPTION = 'Details coming soon. This gig was submitted by the venue and will be updated shortly.';
@@ -101,6 +103,15 @@ export async function logoutAction() { await signOut(); redirect('/'); }
 function ensureVenueCanPost(venueId: number, userId: number, role: string) {
   if (role !== 'venue_admin') return true;
   const membership = db.prepare('SELECT id FROM venue_memberships WHERE user_id=? AND venue_id=? AND approved=1').get(userId, venueId) as { id: number } | undefined;
+  return Boolean(membership);
+}
+
+function canManageGig(gigId: number, userId: number, role: string) {
+  const gig = db.prepare('SELECT venue_id, created_by_user_id FROM gigs WHERE id=?').get(gigId) as { venue_id: number; created_by_user_id: number } | undefined;
+  if (!gig) return false;
+  if (gig.created_by_user_id === userId) return true;
+  if (role !== 'venue_admin') return false;
+  const membership = db.prepare('SELECT id FROM venue_memberships WHERE user_id=? AND venue_id=? AND approved=1').get(userId, gig.venue_id) as { id: number } | undefined;
   return Boolean(membership);
 }
 
@@ -200,12 +211,14 @@ export async function updateGigDetailsAction(formData: FormData) {
   if (!session) redirect('/login');
 
   const gigId = Number(formData.get('gig_id'));
+  if (!canManageGig(gigId, session.id, session.role)) redirect('/my-gigs?updated=unauthorised');
+
   const description = String(formData.get('description') || '').trim();
   const posterUrl = String(formData.get('poster_url') || '').trim();
   const priceType = String(formData.get('price_type') || 'Free');
   db.prepare(`UPDATE gigs
     SET artist_name=?, date=?, start_time=?, end_time=?, price_type=?, ticket_price=?, ticket_url=?, description=?, poster_url=?, updated_at=CURRENT_TIMESTAMP
-    WHERE id=? AND created_by_user_id=?`).run(
+    WHERE id=?`).run(
     String(formData.get('artist_name') || ''),
     String(formData.get('date') || ''),
     String(formData.get('start_time') || ''),
@@ -216,8 +229,13 @@ export async function updateGigDetailsAction(formData: FormData) {
     description || FALLBACK_GIG_DESCRIPTION,
     posterUrl || FALLBACK_POSTER_URL,
     gigId,
-    session.id,
   );
+
+  const returnTo = String(formData.get('return_to') || '').trim();
+  if (returnTo.startsWith('/')) {
+    redirect(returnTo);
+  }
+
   redirect('/my-gigs?updated=1');
 }
 
@@ -232,7 +250,11 @@ export async function updateTimeFormatAction(formData: FormData) {
 export async function updateGigAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect('/login');
-  db.prepare('UPDATE gigs SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND created_by_user_id=?').run(String(formData.get('status')), Number(formData.get('gig_id')), session.id);
+
+  const gigId = Number(formData.get('gig_id') || 0);
+  if (!canManageGig(gigId, session.id, session.role)) redirect('/my-gigs?updated=unauthorised');
+
+  db.prepare('UPDATE gigs SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(String(formData.get('status')), gigId);
   redirect('/my-gigs');
 }
 
@@ -243,12 +265,33 @@ export async function requestPartnershipAction(formData: FormData) {
 
   const venueId = Number(formData.get('venue_id') || 0);
   const artistId = Number(formData.get('artist_id') || 0);
-  if (!venueId || !artistId) redirect('/dashboard?partnership=invalid');
+
+  if (!venueId) redirect('/dashboard?partnership=invalid');
 
   if (session.role === 'venue_admin') {
     const canManageVenue = db.prepare('SELECT id FROM venue_memberships WHERE user_id=? AND venue_id=? AND approved=1').get(session.id, venueId) as { id: number } | undefined;
     if (!canManageVenue) redirect('/dashboard?partnership=unauthorised');
+
+    if (!artistId) {
+      const artistName = String(formData.get('artist_name') || '').trim();
+      const artistContactEmail = String(formData.get('artist_contact_email') || '').trim().toLowerCase();
+      const outreachNote = String(formData.get('outreach_note') || '').trim();
+      const venue = db.prepare('SELECT name FROM venues WHERE id=?').get(venueId) as { name: string } | undefined;
+
+      if (!artistName || !artistContactEmail || !venue) redirect('/dashboard?partnership=invalid');
+
+      db.prepare(`INSERT INTO venue_onboarding_leads (requested_by_user_id, artist_id, venue_name, contact_email, note)
+        VALUES (?, NULL, ?, ?, ?)`).run(
+        session.id,
+        venue.name,
+        artistContactEmail,
+        `Artist partnership lead: ${artistName}${outreachNote ? ` — ${outreachNote}` : ''}`,
+      );
+
+      redirect('/dashboard?partnership=lead-requested');
+    }
   } else {
+    if (!artistId) redirect('/dashboard?partnership=invalid');
     const artist = db.prepare('SELECT id FROM artists WHERE id=? AND created_by_user_id=?').get(artistId, session.id) as { id: number } | undefined;
     if (!artist) redirect('/dashboard?partnership=unauthorised');
   }
