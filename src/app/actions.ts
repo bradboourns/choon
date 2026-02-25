@@ -101,7 +101,23 @@ export async function createGigAction(formData: FormData) {
   const session = await getSession();
   if (!session || (session.role !== 'artist' && session.role !== 'venue_admin')) redirect('/login');
 
-  const venueId = Number(formData.get('venue_id'));
+  const venueId = Number(formData.get('venue_id') || 0);
+
+  if (!venueId && session.role === 'artist') {
+    const venueName = String(formData.get('missing_venue_name') || '').trim();
+    const contactEmail = String(formData.get('missing_venue_contact_email') || '').trim().toLowerCase();
+    const note = String(formData.get('missing_venue_note') || '').trim();
+    const artistProfile = db.prepare('SELECT id FROM artists WHERE created_by_user_id=?').get(session.id) as { id: number } | undefined;
+
+    if (!venueName || !contactEmail) redirect('/create-gig?error=missing-venue-contact');
+
+    db.prepare(`INSERT INTO venue_onboarding_leads (requested_by_user_id, artist_id, venue_name, contact_email, note)
+      VALUES (?, ?, ?, ?, ?)`).run(session.id, artistProfile?.id || null, venueName, contactEmail, note);
+
+    redirect('/create-gig?lead=requested');
+  }
+
+  if (!venueId) redirect('/create-gig?error=missing-venue');
   if (!ensureVenueCanPost(venueId, session.id, session.role)) redirect('/create-gig?error=venue-permission');
 
   const genres = formData.getAll('genres');
@@ -248,6 +264,10 @@ export async function respondPartnershipAction(formData: FormData) {
   const decision = String(formData.get('decision') || 'declined') === 'accept' ? 'accepted' : 'declined';
   const partnership = db.prepare("SELECT * FROM partnerships WHERE id=? AND status='pending'").get(partnershipId) as any;
   if (!partnership) redirect('/dashboard');
+
+  if (partnership.requested_by_role === session.role) {
+    redirect('/dashboard?partnership=counterparty-required');
+  }
 
   if (session.role === 'venue_admin') {
     const canManageVenue = db.prepare('SELECT id FROM venue_memberships WHERE user_id=? AND venue_id=? AND approved=1').get(session.id, partnership.venue_id) as { id: number } | undefined;

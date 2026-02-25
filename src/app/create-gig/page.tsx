@@ -4,7 +4,7 @@ import { genres, vibes } from '@/lib/data';
 import { redirect } from 'next/navigation';
 import CreateGigForm from '@/components/CreateGigForm';
 
-export default async function CreateGig({ searchParams }: { searchParams: Promise<{ error?: string; venue_id?: string }> }) {
+export default async function CreateGig({ searchParams }: { searchParams: Promise<{ error?: string; venue_id?: string; lead?: string }> }) {
   const session = await getSession();
   if (!session || (session.role !== 'artist' && session.role !== 'venue_admin')) redirect('/login');
 
@@ -32,9 +32,11 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       venues={venues}
       preferredVenueId={preferredVenueId}
       error={query.error}
+      lead={query.lead}
       genres={genres}
       vibes={vibes}
       partneredArtists={partneredArtists}
+      role={session.role}
     />
   </div>;
 }

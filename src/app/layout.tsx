@@ -33,8 +33,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   {roleLabel[session.role] || 'Member'}
                 </span>
               )}
-              {session && <Link href="/dashboard" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Dashboard</Link>}
-              {session?.role === 'user' && <Link href="/saved" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Saved</Link>}
+              {session?.role === 'user' && <Link href="/" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Find choons</Link>}
               {session ? (
                 <AccountMenu canPostGig={canPostGig} isVenueAdmin={session.role === 'venue_admin'} />
               ) : (

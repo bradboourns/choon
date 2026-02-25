@@ -118,6 +118,30 @@ CREATE TABLE IF NOT EXISTS saved_gigs (
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (user_id, gig_id)
 );
+CREATE TABLE IF NOT EXISTS gig_interest (
+  user_id INTEGER NOT NULL,
+  gig_id INTEGER NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, gig_id)
+);
+CREATE TABLE IF NOT EXISTS artist_follows (
+  user_id INTEGER NOT NULL,
+  artist_id INTEGER NOT NULL,
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (user_id, artist_id)
+);
+CREATE TABLE IF NOT EXISTS venue_onboarding_leads (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  requested_by_user_id INTEGER NOT NULL,
+  artist_id INTEGER,
+  venue_name TEXT NOT NULL,
+  contact_email TEXT NOT NULL,
+  note TEXT,
+  status TEXT NOT NULL DEFAULT 'new',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
 CREATE TABLE IF NOT EXISTS reports (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   gig_id INTEGER,
@@ -175,6 +199,11 @@ if (!gigColumns.some((column) => column.name === 'admin_note')) {
   db.exec("ALTER TABLE gigs ADD COLUMN admin_note TEXT NOT NULL DEFAULT ''");
 }
 
+
+db.exec("CREATE INDEX IF NOT EXISTS gig_interest_user_idx ON gig_interest(user_id)");
+db.exec("CREATE INDEX IF NOT EXISTS artist_follows_user_idx ON artist_follows(user_id)");
+db.exec("CREATE INDEX IF NOT EXISTS venue_onboarding_leads_status_idx ON venue_onboarding_leads(status)");
+
 const standardAccounts = [
   { username: 'admin', email: 'admin@choon.local', role: 'admin', displayName: 'Platform Admin' },
   { username: 'fan', email: 'fan@choon.local', role: 'user', displayName: 'Fan Admin' },
@@ -199,6 +228,7 @@ if (existingSignature !== expectedSignature) {
     db.exec('DELETE FROM venue_requests;');
     db.exec('DELETE FROM reports;');
     db.exec('DELETE FROM saved_gigs;');
+    db.exec('DELETE FROM venue_onboarding_leads;');
     db.exec('DELETE FROM gigs;');
     db.exec('DELETE FROM venues;');
     db.exec('DELETE FROM artists;');
@@ -243,6 +273,7 @@ if (existingVenueSignature !== expectedVenueSignature) {
     (db.prepare("SELECT id FROM users WHERE username = 'admin'").get() as { id: number } | undefined)?.id || 1;
   db.exec(`
   DELETE FROM venue_memberships;
+  DELETE FROM venue_onboarding_leads;
   DELETE FROM gigs;
   DELETE FROM venues;
   INSERT INTO venues (name,abn,address,suburb,city,state,postcode,lat,lng,website,instagram,approved) VALUES
