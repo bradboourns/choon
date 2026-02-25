@@ -49,6 +49,13 @@ export default async function VenueInfoPage({ params }: { params: Promise<{ id: 
           {followsVenue ? 'Following' : 'Follow'}
         </button>
       </form>}
+      {!session && <div className='sticky right-0 top-24 rounded-xl border border-violet-500/30 bg-violet-900/20 p-3'>
+        <p className='text-xs text-violet-100'>Search is free. Create an account to follow this venue and track your interests.</p>
+        <div className='mt-2 flex gap-2'>
+          <Link href={`/register?intent=follow-venue&venue=${venue.id}`} className='rounded-lg bg-violet-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-violet-500'>Create account</Link>
+          <Link href='/login' className='rounded-lg border border-zinc-600 px-3 py-1.5 text-xs hover:bg-zinc-800'>Log in</Link>
+        </div>
+      </div>}
     </div>
 
     <section className='grid gap-3 rounded-xl border border-zinc-700 bg-zinc-900/50 p-4 sm:grid-cols-3'>

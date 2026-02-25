@@ -12,11 +12,14 @@ export default function RegisterPage() {
   const fanRoleSelected = useMemo(() => role === 'user', [role]);
   const query = useSearchParams();
   const error = query.get('error');
+  const intent = query.get('intent');
 
   return <form action={registerAction} className='mx-auto flex max-w-xl flex-col gap-3 rounded-xl border border-zinc-700 p-4'>
     <h1 className='text-2xl font-bold'>Join Choon</h1>
     {error === 'invalid-credentials' && <p className='rounded bg-amber-900/60 p-2 text-sm text-amber-100'>Please provide valid account details and matching passwords.</p>}
     {error === 'missing-fan-details' && <p className='rounded bg-amber-900/60 p-2 text-sm text-amber-100'>Fan signup requires first name, last name, DOB, username, and your city.</p>}
+    {intent === 'interested' && <p className='rounded bg-violet-900/40 p-2 text-sm text-violet-100'>Create an account to mark gigs as interested or going. Searching and browsing stays free.</p>}
+    {intent === 'follow-venue' && <p className='rounded bg-violet-900/40 p-2 text-sm text-violet-100'>Create an account to follow venues and keep track of places you like. Searching and browsing stays free.</p>}
 
     <input name='email' type='email' required placeholder='Email address' className='rounded bg-zinc-900 p-2' />
     <input name='username' type='text' required placeholder='Public username' className='rounded bg-zinc-900 p-2' />

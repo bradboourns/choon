@@ -137,7 +137,14 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
         </button>
       </form>}
     </section>}
-    {!session && <Link href='/login'>Log in to save this gig</Link>}
+    {!session && <section className='rounded-2xl border border-violet-500/30 bg-violet-900/20 p-4'>
+      <p className='text-sm text-violet-100'>Searching is totally free. Create an account if you want to save this gig, mark interest, or follow the venue so Choon can track it for you.</p>
+      <div className='mt-3 flex flex-wrap gap-2'>
+        <Link href={`/register?intent=interested&gig=${gig.id}`} className='rounded-xl bg-violet-600 px-4 py-2 text-sm font-medium text-white hover:bg-violet-500'>I&apos;m interested</Link>
+        <Link href={`/register?intent=follow-venue&venue=${gig.venue_id}`} className='rounded-xl border border-zinc-500 px-4 py-2 text-sm hover:bg-zinc-800'>Follow venue</Link>
+        <Link href='/login' className='rounded-xl border border-zinc-500 px-4 py-2 text-sm hover:bg-zinc-800'>Already have an account? Log in</Link>
+      </div>
+    </section>}
 
     <section className='rounded-3xl border border-zinc-700 bg-zinc-900/40 p-5'>
       <h2 className='text-2xl font-semibold'>Venue</h2>
