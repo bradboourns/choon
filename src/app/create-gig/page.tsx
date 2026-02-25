@@ -27,7 +27,17 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       ) : (
         <>
           <p className='text-sm text-zinc-400'>Venue / Location</p>
-          <select name='venue_id' required defaultValue={preferredVenueId && venues.some((v) => v.id === preferredVenueId) ? String(preferredVenueId) : undefined} className='w-full rounded bg-zinc-900 p-2'>{venues.map((v) => <option key={v.id} value={v.id}>{v.name} ({v.suburb})</option>)}</select>
+          {venues.length === 1 ? (
+            <>
+              <div className='rounded border border-zinc-700 bg-zinc-900 p-3 text-sm'>
+                <p className='font-semibold'>{venues[0].name}</p>
+                <p className='text-zinc-400'>{venues[0].suburb}, {venues[0].city} {venues[0].state}</p>
+              </div>
+              <input type='hidden' name='venue_id' value={venues[0].id} />
+            </>
+          ) : (
+            <select name='venue_id' required defaultValue={preferredVenueId && venues.some((v) => v.id === preferredVenueId) ? String(preferredVenueId) : undefined} className='w-full rounded bg-zinc-900 p-2'>{venues.map((v) => <option key={v.id} value={v.id}>{v.name} ({v.suburb})</option>)}</select>
+          )}
           <input name='artist_name' required placeholder='Artist/band name' className='w-full rounded bg-zinc-900 p-2'/>
           <div className='grid grid-cols-2 gap-2'><input type='date' name='date' required className='rounded bg-zinc-900 p-2'/><input type='time' name='start_time' required className='rounded bg-zinc-900 p-2'/></div>
           <input type='time' name='end_time' className='w-full rounded bg-zinc-900 p-2' placeholder='End time'/>
