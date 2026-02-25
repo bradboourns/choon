@@ -4,7 +4,7 @@ export const genres = ['Rock', 'Indie', 'Electronic', 'Pop', 'Jazz', 'Hip Hop', 
 export const vibes = ['Chill', 'Loud', 'Sweaty', 'Underground', 'Date night', 'Dancey', 'Acoustic'];
 
 export function getGigs(filters: any = {}) {
-  let q = `SELECT gigs.*, venues.name venue_name, venues.suburb, venues.city, venues.address, venues.lat, venues.lng, popup_collectives.name popup_collective_name
+  let q = `SELECT gigs.*, venues.name venue_name, venues.suburb, venues.city, venues.address, venues.lat, venues.lng, popup_collectives.name popup_collective_name, popup_collectives.slug popup_collective_slug
            FROM gigs JOIN venues ON gigs.venue_id = venues.id
            LEFT JOIN popup_collectives ON popup_collectives.id = gigs.popup_collective_id
            WHERE gigs.status='approved' AND venues.approved=1 AND venues.city='Gold Coast'`;
@@ -21,7 +21,11 @@ export function getGigs(filters: any = {}) {
 }
 
 export function getGig(id: number) {
-  return db.prepare(`SELECT gigs.*, venues.name venue_name, venues.address, venues.suburb, venues.city, venues.state, venues.postcode, venues.lat, venues.lng, popup_collectives.name popup_collective_name
+  return db.prepare(`SELECT gigs.*, venues.name venue_name, venues.address, venues.suburb, venues.city, venues.state, venues.postcode, venues.lat, venues.lng,
+    popup_collectives.name popup_collective_name, popup_collectives.slug popup_collective_slug,
+    artists.spotify_monthly_listeners artist_spotify_monthly_listeners, artists.show_spotify_monthly_listeners artist_show_spotify_monthly_listeners
   FROM gigs JOIN venues ON gigs.venue_id = venues.id
-  LEFT JOIN popup_collectives ON popup_collectives.id = gigs.popup_collective_id WHERE gigs.id = ?`).get(id) as any;
+  LEFT JOIN popup_collectives ON popup_collectives.id = gigs.popup_collective_id
+  LEFT JOIN artists ON artists.id = gigs.artist_id
+  WHERE gigs.id = ?`).get(id) as any;
 }

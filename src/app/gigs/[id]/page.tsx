@@ -26,15 +26,45 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
     ? gig.created_by_user_id === session.id || (session.role === 'venue_admin' && Boolean(db.prepare('SELECT 1 FROM venue_memberships WHERE user_id = ? AND venue_id = ? AND approved = 1').get(session.id, gig.venue_id)))
     : false;
 
+  const artistFollowers = gig.artist_id
+    ? Number((db.prepare('SELECT COUNT(*) AS total FROM artist_follows WHERE artist_id = ?').get(gig.artist_id) as { total: number }).total || 0)
+    : 0;
+
   return <article className='space-y-5'>
     <img src={gig.poster_url || 'https://images.unsplash.com/photo-1511379938547-c1f69419868d?w=1200'} alt={gig.artist_name} className='h-64 w-full rounded-2xl object-cover'/>
 
     <section className='space-y-2'>
-      <h1 className='text-4xl font-bold'>{gig.artist_name}</h1>
-      <p className='text-2xl text-zinc-400'>
-        <Link href={`/venues/${gig.venue_id}`} className='text-zinc-300 hover:text-violet-300'>{gig.venue_name}</Link>
+      <div className='flex items-start justify-between gap-4'>
+        <h1 className='text-4xl font-bold'>{gig.artist_name}</h1>
+        {canEditGig && <details className='group rounded-xl border border-zinc-700 bg-zinc-900/40 p-2'>
+          <summary className='cursor-pointer list-none rounded-md px-3 py-1 text-sm text-zinc-300 hover:text-white'>Edit</summary>
+          <form action={updateGigDetailsAction} className='mt-3 grid gap-2 sm:w-[36rem] sm:grid-cols-2'>
+            <input type='hidden' name='gig_id' value={gig.id} />
+            <input type='hidden' name='return_to' value={`/gigs/${gig.id}`} />
+            <input name='artist_name' defaultValue={gig.artist_name} required className='rounded bg-zinc-950 p-2' />
+            <input type='date' name='date' defaultValue={gig.date} required className='rounded bg-zinc-950 p-2' />
+            <input type='time' name='start_time' defaultValue={gig.start_time} required className='rounded bg-zinc-950 p-2' />
+            <input type='time' name='end_time' defaultValue={gig.end_time || ''} className='rounded bg-zinc-950 p-2' />
+            <select name='price_type' defaultValue={gig.price_type} className='rounded bg-zinc-950 p-2'>
+              <option>Free</option>
+              <option>Door</option>
+              <option>Ticketed</option>
+            </select>
+            <input type='number' min='0' step='0.01' name='ticket_price' defaultValue={gig.ticket_price ?? 0} className='rounded bg-zinc-950 p-2' />
+            <input name='ticket_url' defaultValue={gig.ticket_url || ''} className='rounded bg-zinc-950 p-2 sm:col-span-2' placeholder='Ticket URL' />
+            <textarea name='description' defaultValue={gig.description || ''} className='rounded bg-zinc-950 p-2 sm:col-span-2' placeholder='Description' />
+            <input name='poster_url' defaultValue={gig.poster_url || ''} className='rounded bg-zinc-950 p-2 sm:col-span-2' placeholder='Poster image URL' />
+            <button className='rounded bg-violet-600 px-4 py-2 font-medium text-white sm:col-span-2'>Save</button>
+          </form>
+        </details>}
+      </div>
+      <p className='text-sm text-zinc-400'>
+        at <Link href={`/venues/${gig.venue_id}`} className='hover:text-zinc-200'>{gig.venue_name}</Link>
       </p>
-      {gig.popup_collective_name && <p className='text-sm text-zinc-300'>Presented by <span className='font-medium text-violet-300'>{gig.popup_collective_name}</span></p>}
+      {gig.popup_collective_name && <p className='text-sm text-zinc-400'>
+        Presented by{' '}
+        {gig.popup_collective_slug ? <Link href={`/collectives/${gig.popup_collective_slug}`} className='text-zinc-300 hover:text-violet-300'>{gig.popup_collective_name}</Link> : <span className='text-zinc-300'>{gig.popup_collective_name}</span>}
+      </p>}
       {gig.artist_id && <p><Link href={`/artists/${gig.artist_id}`} className='text-violet-300 hover:text-violet-200'>View artist information page</Link></p>}
     </section>
 
@@ -47,6 +77,17 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
         <p className='text-sm uppercase tracking-wide text-violet-300'>Time</p>
         <p className='mt-2 text-3xl font-semibold'>{formatTime(gig.start_time, '12h')}</p>
       </div>
+    </section>
+
+    <section className='grid gap-3 sm:grid-cols-2'>
+      {gig.artist_id && <div className='rounded-2xl border border-zinc-700 bg-zinc-900/40 p-4'>
+        <p className='text-xs uppercase tracking-wide text-zinc-400'>Artist followers on Choon</p>
+        <p className='mt-1 text-2xl font-semibold'>{artistFollowers}</p>
+      </div>}
+      {gig.artist_show_spotify_monthly_listeners === 1 && <div className='rounded-2xl border border-zinc-700 bg-zinc-900/40 p-4'>
+        <p className='text-xs uppercase tracking-wide text-zinc-400'>Spotify monthly listeners</p>
+        <p className='mt-1 text-2xl font-semibold'>{Number(gig.artist_spotify_monthly_listeners || 0).toLocaleString()}</p>
+      </div>}
     </section>
 
     <section className='space-y-3'>
@@ -98,32 +139,9 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
     </section>}
     {!session && <Link href='/login'>Log in to save this gig</Link>}
 
-    {canEditGig && <section className='space-y-3 rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
-      <h2 className='text-xl font-semibold'>Edit this gig</h2>
-      <p className='text-sm text-zinc-400'>You manage this venue/gig, so you can update the event details directly from this page.</p>
-      <form action={updateGigDetailsAction} className='grid gap-2 sm:grid-cols-2'>
-        <input type='hidden' name='gig_id' value={gig.id} />
-        <input type='hidden' name='return_to' value={`/gigs/${gig.id}`} />
-        <input name='artist_name' defaultValue={gig.artist_name} required className='rounded bg-zinc-950 p-2' />
-        <input type='date' name='date' defaultValue={gig.date} required className='rounded bg-zinc-950 p-2' />
-        <input type='time' name='start_time' defaultValue={gig.start_time} required className='rounded bg-zinc-950 p-2' />
-        <input type='time' name='end_time' defaultValue={gig.end_time || ''} className='rounded bg-zinc-950 p-2' />
-        <select name='price_type' defaultValue={gig.price_type} className='rounded bg-zinc-950 p-2'>
-          <option>Free</option>
-          <option>Door</option>
-          <option>Ticketed</option>
-        </select>
-        <input type='number' min='0' step='0.01' name='ticket_price' defaultValue={gig.ticket_price ?? 0} className='rounded bg-zinc-950 p-2' />
-        <input name='ticket_url' defaultValue={gig.ticket_url || ''} className='rounded bg-zinc-950 p-2 sm:col-span-2' placeholder='Ticket URL' />
-        <textarea name='description' defaultValue={gig.description || ''} className='rounded bg-zinc-950 p-2 sm:col-span-2' placeholder='Description' />
-        <input name='poster_url' defaultValue={gig.poster_url || ''} className='rounded bg-zinc-950 p-2 sm:col-span-2' placeholder='Poster image URL' />
-        <button className='rounded bg-violet-600 px-4 py-2 font-medium text-white sm:col-span-2'>Save gig updates</button>
-      </form>
-    </section>}
-
     <section className='rounded-3xl border border-zinc-700 bg-zinc-900/40 p-5'>
       <h2 className='text-2xl font-semibold'>Venue</h2>
-      <p className='mt-3 text-2xl font-semibold'>{gig.venue_name}</p>
+      <p className='mt-3 text-2xl font-semibold'><Link href={`/venues/${gig.venue_id}`} className='hover:text-violet-300'>{gig.venue_name}</Link></p>
       <p className='text-zinc-400'>{gig.address}, {gig.suburb} {gig.postcode}</p>
       {gig.ticket_url && (
         <a className='mt-5 block rounded-2xl border border-violet-600 bg-violet-900/30 p-4 text-center text-2xl font-bold text-violet-200 hover:bg-violet-800/40' href={gig.ticket_url}>

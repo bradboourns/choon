@@ -15,6 +15,9 @@ export default async function VenueInfoPage({ params }: { params: Promise<{ id: 
     WHERE gigs.venue_id = ? AND gigs.status = 'approved' AND gigs.date >= date('now')
     ORDER BY gigs.date ASC, gigs.start_time ASC LIMIT 10`).all(venue.id) as any[];
 
+  const isOwnVenueAccount = session?.role === 'venue_admin'
+    ? Boolean(db.prepare('SELECT 1 FROM venue_memberships WHERE user_id = ? AND venue_id = ? AND approved = 1').get(session.id, venue.id))
+    : false;
 
   const followsVenue = session
     ? Boolean(db.prepare('SELECT 1 FROM venue_follows WHERE user_id = ? AND venue_id = ?').get(session.id, venue.id))
@@ -27,20 +30,26 @@ export default async function VenueInfoPage({ params }: { params: Promise<{ id: 
     FROM gigs
     WHERE venue_id = ? AND status = 'approved'`).get(venue.id) as { hosted_gigs: number; upcoming_gigs: number; unique_artists: number };
 
-  return <div className='space-y-4'>
+  return <div className='relative space-y-4'>
     <Link href='/' className='text-sm text-zinc-300 hover:text-zinc-100'>← Back</Link>
-    <h1 className='text-3xl font-bold'>{venue.name}</h1>
-    <p className='text-zinc-300'>{venue.address}, {venue.suburb} {venue.state} {venue.postcode}</p>
-    {venue.website && <a href={venue.website} className='text-violet-300 hover:text-violet-200'>Venue website</a>}
-    {session && <form action='/api/follow-venue' method='post' className='inline'>
-      <input type='hidden' name='venue_id' value={venue.id} />
-      <input type='hidden' name='follow' value={followsVenue ? '0' : '1'} />
-      <input type='hidden' name='redirect_to' value={`/venues/${venue.id}`} />
-      <button className='inline-flex items-center gap-1.5 rounded border border-zinc-600 px-3 py-1.5 text-sm'>
-        <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d='M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z' /><circle cx='12' cy='10' r='2.5' /></svg>
-        {followsVenue ? 'Following venue' : 'Follow venue'}
-      </button>
-    </form>}
+
+    <div className='flex items-start justify-between gap-4'>
+      <div>
+        <h1 className='text-3xl font-bold'>{venue.name}</h1>
+        <p className='text-zinc-300'>{venue.address}, {venue.suburb} {venue.state} {venue.postcode}</p>
+        {venue.website && <a href={venue.website} className='text-violet-300 hover:text-violet-200'>Venue website</a>}
+      </div>
+      {session && !isOwnVenueAccount && <form action='/api/follow-venue' method='post' className='sticky right-0 top-24'>
+        <input type='hidden' name='venue_id' value={venue.id} />
+        <input type='hidden' name='follow' value={followsVenue ? '0' : '1'} />
+        <input type='hidden' name='redirect_to' value={`/venues/${venue.id}`} />
+        <button aria-label={followsVenue ? 'Unfollow venue' : 'Follow venue'} className='inline-flex items-center gap-2 rounded-full border border-zinc-600 bg-zinc-900/80 px-4 py-2 text-sm hover:border-violet-400'>
+          <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d='M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z' /><circle cx='12' cy='10' r='2.5' /></svg>
+          <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d='M8 10h8M12 6v8' /><path d='M5 18c2-2 4-3 7-3s5 1 7 3' /></svg>
+          {followsVenue ? 'Following' : 'Follow'}
+        </button>
+      </form>}
+    </div>
 
     <section className='grid gap-3 rounded-xl border border-zinc-700 bg-zinc-900/50 p-4 sm:grid-cols-3'>
       <div className='rounded-lg border border-zinc-800 bg-zinc-950/50 p-3'>
@@ -62,7 +71,6 @@ export default async function VenueInfoPage({ params }: { params: Promise<{ id: 
       {gigs.length === 0 ? <p className='text-sm text-zinc-400'>No upcoming gigs available.</p> : gigs.map((gig) => (
         <Link key={gig.id} href={`/gigs/${gig.id}`} className='block rounded border border-zinc-700 bg-zinc-950/70 p-3 text-sm hover:bg-zinc-900'>
           <p className='font-medium'>{gig.artist_name}</p>
-          {gig.artist_id && <p className='text-xs text-violet-300'>Artist page: /artists/{gig.artist_id}</p>}
           {gig.popup_collective_name && <p className='text-xs text-emerald-300'>Presented by {gig.popup_collective_name}</p>}
           <p className='text-zinc-400'>{formatDateDDMMYYYY(gig.date)} · {formatTime(gig.start_time, '12h')}</p>
         </Link>

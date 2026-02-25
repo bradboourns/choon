@@ -13,6 +13,11 @@ export async function POST(req: Request) {
 
   if (!venueId) redirect(redirectTo);
 
+  const isOwnVenueMembership = Boolean(
+    db.prepare('SELECT 1 FROM venue_memberships WHERE user_id = ? AND venue_id = ? AND approved = 1').get(session.id, venueId),
+  );
+  if (isOwnVenueMembership) redirect(redirectTo);
+
   if (follow) {
     db.prepare('INSERT OR IGNORE INTO venue_follows (user_id, venue_id) VALUES (?, ?)').run(session.id, venueId);
   } else {

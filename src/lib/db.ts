@@ -80,6 +80,8 @@ CREATE TABLE IF NOT EXISTS artists (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   display_name TEXT NOT NULL,
   instagram TEXT,
+  spotify_monthly_listeners INTEGER NOT NULL DEFAULT 0,
+  show_spotify_monthly_listeners INTEGER NOT NULL DEFAULT 0,
   created_by_user_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -220,6 +222,14 @@ if (!profileColumns.some((column) => column.name === 'home_city')) {
 const venueRequestColumns = db.prepare('PRAGMA table_info(venue_requests)').all() as Array<{ name: string }>;
 if (!venueRequestColumns.some((column) => column.name === 'provisional_venue_id')) {
   db.exec('ALTER TABLE venue_requests ADD COLUMN provisional_venue_id INTEGER');
+}
+
+const artistColumns = db.prepare('PRAGMA table_info(artists)').all() as Array<{ name: string }>;
+if (!artistColumns.some((column) => column.name === 'spotify_monthly_listeners')) {
+  db.exec('ALTER TABLE artists ADD COLUMN spotify_monthly_listeners INTEGER NOT NULL DEFAULT 0');
+}
+if (!artistColumns.some((column) => column.name === 'show_spotify_monthly_listeners')) {
+  db.exec('ALTER TABLE artists ADD COLUMN show_spotify_monthly_listeners INTEGER NOT NULL DEFAULT 0');
 }
 
 const gigColumns = db.prepare('PRAGMA table_info(gigs)').all() as Array<{ name: string }>;

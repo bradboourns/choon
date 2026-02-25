@@ -247,6 +247,28 @@ export async function updateTimeFormatAction(formData: FormData) {
   redirect('/settings?saved=time-format');
 }
 
+
+export async function updateArtistStatsVisibilityAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect('/login');
+  if (session.role !== 'artist') redirect('/settings?saved=forbidden');
+
+  const artist = db.prepare('SELECT id FROM artists WHERE created_by_user_id = ?').get(session.id) as { id: number } | undefined;
+  if (!artist) redirect('/settings?saved=missing-artist');
+
+  const spotifyMonthlyListenersRaw = Number(formData.get('spotify_monthly_listeners') || 0);
+  const spotifyMonthlyListeners = Number.isFinite(spotifyMonthlyListenersRaw) ? Math.max(0, Math.floor(spotifyMonthlyListenersRaw)) : 0;
+  const showSpotifyMonthlyListeners = String(formData.get('show_spotify_monthly_listeners') || '') === 'on' ? 1 : 0;
+
+  db.prepare('UPDATE artists SET spotify_monthly_listeners = ?, show_spotify_monthly_listeners = ? WHERE id = ?').run(
+    spotifyMonthlyListeners,
+    showSpotifyMonthlyListeners,
+    artist.id,
+  );
+
+  redirect('/settings?saved=artist-stats');
+}
+
 export async function updateGigAction(formData: FormData) {
   const session = await getSession();
   if (!session) redirect('/login');
