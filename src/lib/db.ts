@@ -145,10 +145,10 @@ if (!gigColumns.some((column) => column.name === 'admin_note')) {
 }
 
 const standardAccounts = [
-  { username: 'admin', role: 'admin', displayName: 'Platform Admin' },
-  { username: 'fan', role: 'user', displayName: 'Fan Admin' },
-  { username: 'artist', role: 'artist', displayName: 'Artist Admin' },
-  { username: 'venue', role: 'venue_admin', displayName: 'Venue Admin' },
+  { username: 'admin', email: 'admin@choon.local', role: 'admin', displayName: 'Platform Admin' },
+  { username: 'fan', email: 'fan@choon.local', role: 'user', displayName: 'Fan Admin' },
+  { username: 'artist', email: 'artist@choon.local', role: 'artist', displayName: 'Artist Admin' },
+  { username: 'venue', email: 'venue@choon.local', role: 'venue_admin', displayName: 'Venue Admin' },
 ] as const;
 
 const existingUsers = db.prepare('SELECT username, role FROM users ORDER BY username').all() as Array<{ username: string; role: string }>;
@@ -177,7 +177,7 @@ if (existingSignature !== expectedSignature) {
     const artistInsert = db.prepare('INSERT INTO artists (display_name,instagram,created_by_user_id) VALUES (?,?,?)');
 
     for (const account of standardAccounts) {
-      const result = userInsert.run(account.username, null, hash, account.role, 1);
+      const result = userInsert.run(account.username, account.email, hash, account.role, 1);
       const userId = Number(result.lastInsertRowid);
       profileInsert.run(userId, account.displayName, `${account.displayName} account`, 'Gold Coast');
       if (account.role === 'artist') {
