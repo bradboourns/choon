@@ -79,6 +79,17 @@ CREATE TABLE IF NOT EXISTS artists (
   created_by_user_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
+CREATE TABLE IF NOT EXISTS partnerships (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  venue_id INTEGER NOT NULL,
+  artist_id INTEGER NOT NULL,
+  requested_by_user_id INTEGER NOT NULL,
+  requested_by_role TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'pending',
+  created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  responded_at TEXT,
+  UNIQUE (venue_id, artist_id)
+);
 CREATE TABLE IF NOT EXISTS gigs (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   venue_id INTEGER NOT NULL,

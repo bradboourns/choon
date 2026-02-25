@@ -4,13 +4,15 @@ import { useMemo, useState } from 'react';
 import { createGigAction } from '@/app/actions';
 
 type Venue = { id: number; name: string; suburb: string; city: string; state: string; approved: number };
+type PartnerArtist = { id: number; display_name: string };
 
-export default function CreateGigForm({ venues, preferredVenueId, error, genres, vibes }: {
+export default function CreateGigForm({ venues, preferredVenueId, error, genres, vibes, partneredArtists = [] }: {
   venues: Venue[];
   preferredVenueId?: number;
   error?: string;
   genres: string[];
   vibes: string[];
+  partneredArtists?: PartnerArtist[];
 }) {
   const [priceType, setPriceType] = useState('Free');
   const selectedVenue = useMemo(() => venues.find((v) => v.id === preferredVenueId) || venues[0], [venues, preferredVenueId]);
@@ -40,6 +42,26 @@ export default function CreateGigForm({ venues, preferredVenueId, error, genres,
             </select>
           )}
           <input name='artist_name' required placeholder='Artist/band name' className='w-full rounded bg-zinc-900 p-2'/>
+          {partneredArtists.length > 0 && (
+            <div className='rounded border border-zinc-700 bg-zinc-900/60 p-3 text-sm'>
+              <p className='mb-1 text-zinc-300'>Use a partnered artist (optional):</p>
+              <select
+                name='artist_id'
+                className='w-full rounded bg-zinc-950 p-2'
+                defaultValue=''
+                onChange={(event) => {
+                  const nameInput = document.querySelector("input[name='artist_name']") as HTMLInputElement | null;
+                  const option = event.currentTarget.options[event.currentTarget.selectedIndex];
+                  if (nameInput && option?.dataset.artistName) nameInput.value = option.dataset.artistName;
+                }}
+              >
+                <option value=''>No partnered artist selected</option>
+                {partneredArtists.map((artist) => (
+                  <option key={artist.id} value={artist.id} data-artist-name={artist.display_name}>{artist.display_name}</option>
+                ))}
+              </select>
+            </div>
+          )}
           <div className='grid grid-cols-2 gap-2'><input type='date' name='date' required className='rounded bg-zinc-900 p-2'/><input type='time' name='start_time' required className='rounded bg-zinc-900 p-2'/></div>
           <input type='time' name='end_time' className='w-full rounded bg-zinc-900 p-2' placeholder='End time'/>
           <select name='price_type' required value={priceType} onChange={(e) => setPriceType(e.target.value)} className='w-full rounded bg-zinc-900 p-2'><option>Free</option><option>Door</option><option>Ticketed</option></select>

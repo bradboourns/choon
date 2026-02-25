@@ -110,10 +110,14 @@ export async function createGigAction(formData: FormData) {
   const venue = db.prepare('SELECT approved FROM venues WHERE id=?').get(venueId) as { approved: number } | undefined;
   const description = String(formData.get('description') || '').trim();
   const posterUrl = String(formData.get('poster_url') || '').trim();
-  db.prepare(`INSERT INTO gigs (venue_id,artist_name,date,start_time,end_time,price_type,ticket_price,ticket_url,description,genres,vibe_tags,poster_url,status,needs_review,created_by_user_id)
-    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+  const artistIdRaw = Number(formData.get('artist_id') || 0);
+  const artistId = Number.isFinite(artistIdRaw) && artistIdRaw > 0 ? artistIdRaw : null;
+
+  db.prepare(`INSERT INTO gigs (venue_id,artist_name,artist_id,date,start_time,end_time,price_type,ticket_price,ticket_url,description,genres,vibe_tags,poster_url,status,needs_review,created_by_user_id)
+    VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)`).run(
     venueId,
     String(formData.get('artist_name')),
+    artistId,
     String(formData.get('date')),
     String(formData.get('start_time')),
     String(formData.get('end_time') || ''),
@@ -128,7 +132,7 @@ export async function createGigAction(formData: FormData) {
     1,
     session.id,
   );
-  redirect('/my-gigs');
+  redirect(`/my-gigs?venue_id=${venueId}`);
 }
 
 export async function requestVenueAction(formData: FormData) {
@@ -204,6 +208,57 @@ export async function updateGigAction(formData: FormData) {
   if (!session) redirect('/login');
   db.prepare('UPDATE gigs SET status=?, updated_at=CURRENT_TIMESTAMP WHERE id=? AND created_by_user_id=?').run(String(formData.get('status')), Number(formData.get('gig_id')), session.id);
   redirect('/my-gigs');
+}
+
+
+export async function requestPartnershipAction(formData: FormData) {
+  const session = await getSession();
+  if (!session || (session.role !== 'venue_admin' && session.role !== 'artist')) redirect('/login');
+
+  const venueId = Number(formData.get('venue_id') || 0);
+  const artistId = Number(formData.get('artist_id') || 0);
+  if (!venueId || !artistId) redirect('/dashboard?partnership=invalid');
+
+  if (session.role === 'venue_admin') {
+    const canManageVenue = db.prepare('SELECT id FROM venue_memberships WHERE user_id=? AND venue_id=? AND approved=1').get(session.id, venueId) as { id: number } | undefined;
+    if (!canManageVenue) redirect('/dashboard?partnership=unauthorised');
+  } else {
+    const artist = db.prepare('SELECT id FROM artists WHERE id=? AND created_by_user_id=?').get(artistId, session.id) as { id: number } | undefined;
+    if (!artist) redirect('/dashboard?partnership=unauthorised');
+  }
+
+  db.prepare(`INSERT INTO partnerships (venue_id,artist_id,requested_by_user_id,requested_by_role,status)
+    VALUES (?,?,?,?, 'pending')
+    ON CONFLICT(venue_id, artist_id)
+    DO UPDATE SET requested_by_user_id=excluded.requested_by_user_id, requested_by_role=excluded.requested_by_role, status='pending', responded_at=NULL`).run(
+    venueId,
+    artistId,
+    session.id,
+    session.role,
+  );
+
+  redirect('/dashboard?partnership=requested');
+}
+
+export async function respondPartnershipAction(formData: FormData) {
+  const session = await getSession();
+  if (!session || (session.role !== 'venue_admin' && session.role !== 'artist')) redirect('/login');
+
+  const partnershipId = Number(formData.get('partnership_id') || 0);
+  const decision = String(formData.get('decision') || 'declined') === 'accept' ? 'accepted' : 'declined';
+  const partnership = db.prepare("SELECT * FROM partnerships WHERE id=? AND status='pending'").get(partnershipId) as any;
+  if (!partnership) redirect('/dashboard');
+
+  if (session.role === 'venue_admin') {
+    const canManageVenue = db.prepare('SELECT id FROM venue_memberships WHERE user_id=? AND venue_id=? AND approved=1').get(session.id, partnership.venue_id) as { id: number } | undefined;
+    if (!canManageVenue) redirect('/dashboard?partnership=unauthorised');
+  } else {
+    const artist = db.prepare('SELECT id FROM artists WHERE id=? AND created_by_user_id=?').get(partnership.artist_id, session.id) as { id: number } | undefined;
+    if (!artist) redirect('/dashboard?partnership=unauthorised');
+  }
+
+  db.prepare('UPDATE partnerships SET status=?, responded_at=CURRENT_TIMESTAMP WHERE id=?').run(decision, partnershipId);
+  redirect('/dashboard?partnership=updated');
 }
 
 export async function adminReviewVenueRequestAction(formData: FormData) {

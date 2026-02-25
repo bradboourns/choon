@@ -17,6 +17,16 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       ORDER BY venues.approved DESC, venues.name`).all(session.id) as any[]
     : db.prepare('SELECT * FROM venues WHERE approved=1 ORDER BY name').all() as any[];
 
+  const partneredArtists = session.role === 'venue_admin'
+    ? db.prepare(`SELECT artists.id, artists.display_name
+      FROM partnerships
+      JOIN artists ON artists.id = partnerships.artist_id
+      JOIN venue_memberships ON venue_memberships.venue_id = partnerships.venue_id
+      WHERE venue_memberships.user_id = ? AND venue_memberships.approved = 1 AND partnerships.status = 'accepted'
+      GROUP BY artists.id, artists.display_name
+      ORDER BY artists.display_name`).all(session.id) as Array<{ id: number; display_name: string }>
+    : [];
+
   return <div className='space-y-6'>
     <CreateGigForm
       venues={venues}
@@ -24,6 +34,7 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       error={query.error}
       genres={genres}
       vibes={vibes}
+      partneredArtists={partneredArtists}
     />
   </div>;
 }
