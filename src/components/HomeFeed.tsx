@@ -33,6 +33,7 @@ type Props = {
   savedGigIds: number[];
   interestByGig: Record<number, 'interested' | 'going'>;
   followedArtistIds: number[];
+  defaultCity: string;
 };
 
 function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -62,13 +63,24 @@ function parseDateTime(date: string, time: string) {
   return new Date(`${date}T${time || '00:00'}`);
 }
 
-export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByGig, followedArtistIds }: Props) {
+function cityDefaultCenter(city: string) {
+  const key = city.trim().toLowerCase();
+  const centers: Record<string, { lat: number; lng: number }> = {
+    'gold coast': { lat: -28.0167, lng: 153.4 },
+    'brisbane': { lat: -27.4698, lng: 153.0251 },
+    'sydney': { lat: -33.8688, lng: 151.2093 },
+    'melbourne': { lat: -37.8136, lng: 144.9631 },
+  };
+  return centers[key] || defaultMapCenter;
+}
+
+export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByGig, followedArtistIds, defaultCity }: Props) {
   const [tab, setTab] = useState<'list' | 'map'>('list');
-  const [search, setSearch] = useState('');
+  const [search, setSearch] = useState(defaultCity);
   const [price, setPrice] = useState('');
   const [dateRange, setDateRange] = useState<(typeof dateTabs)[number]['key']>('next7');
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapCenter, setMapCenter] = useState(defaultMapCenter);
+  const [mapCenter, setMapCenter] = useState(cityDefaultCenter(defaultCity));
   const [distanceRangeKm, setDistanceRangeKm] = useState(25);
   const [distanceSort, setDistanceSort] = useState<'date' | 'closest' | 'furthest'>('date');
 
@@ -153,7 +165,8 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
           </button>
         </div>
 
-        <p className="mt-3 text-sm text-zinc-300">{loc ? 'Distances are calculated from your current location.' : 'Enable location for precise distance to each gig.'}</p>
+        <p className="mt-3 text-sm text-zinc-300">{loc ? 'Distances are calculated from your current location.' : `Defaulting map and search to ${defaultCity || 'Gold Coast'} until location is enabled.`}</p>
+        <p className="mt-1 text-xs text-zinc-400">Map radius always matches the selected distance filter.</p>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {dateTabs.map((item) => (
@@ -203,7 +216,7 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
       </div>
 
       {tab === 'map' ? (
-        <GigMap gigs={gigs} center={loc || mapCenter} />
+        <GigMap gigs={gigs} center={loc || mapCenter} radiusKm={distanceRangeKm} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {gigs.map((g) => {

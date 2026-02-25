@@ -35,7 +35,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               )}
               {session?.role === 'user' && <Link href="/" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Find choons</Link>}
               {session ? (
-                <AccountMenu canPostGig={canPostGig} isVenueAdmin={session.role === 'venue_admin'} />
+                <AccountMenu canPostGig={canPostGig} isVenueAdmin={session.role === 'venue_admin'} username={session.username} />
               ) : (
                 <>
                   <Link href="/login" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Log in</Link>

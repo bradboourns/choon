@@ -96,6 +96,26 @@ export default async function DashboardPage() {
     ? db.prepare('SELECT id, display_name FROM artists ORDER BY display_name').all() as Array<{ id: number; display_name: string }>
     : [];
 
+  const fanStats = session.role === 'user'
+    ? db.prepare(`SELECT
+        (SELECT COUNT(*) FROM saved_gigs WHERE user_id = ?) AS saved_pages,
+        (SELECT COUNT(*) FROM artist_follows WHERE user_id = ?) AS artists_followed,
+        (SELECT COUNT(*) FROM gig_interest WHERE user_id = ? AND status = 'going') AS going_count,
+        (SELECT COUNT(*) FROM gig_interest WHERE user_id = ? AND status = 'interested') AS interested_count
+      `).get(session.id, session.id, session.id, session.id) as { saved_pages: number; artists_followed: number; going_count: number; interested_count: number }
+    : null;
+
+  const fanUpcoming = session.role === 'user'
+    ? db.prepare(`SELECT gigs.id, gigs.artist_name, gigs.date, gigs.start_time, venues.name venue_name
+      FROM gig_interest
+      JOIN gigs ON gigs.id = gig_interest.gig_id
+      JOIN venues ON venues.id = gigs.venue_id
+      WHERE gig_interest.user_id = ? AND gig_interest.status = 'going' AND gigs.status = 'approved' AND gigs.date >= date('now')
+      ORDER BY gigs.date ASC, gigs.start_time ASC
+      LIMIT 5
+    `).all(session.id) as Array<{ id: number; artist_name: string; date: string; start_time: string; venue_name: string }>
+    : [];
+
   return (
     <div className='space-y-4'>
       <h1 className='text-3xl font-bold'>Dashboard</h1>
@@ -242,9 +262,33 @@ export default async function DashboardPage() {
         </section>
       )}
 
-      {(session.role === 'artist' || session.role === 'user') && (
+      {session.role === 'user' && fanStats && (
+        <section className='space-y-3 rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
+          <div className='flex flex-wrap items-center justify-between gap-2'>
+            <h2 className='text-xl font-semibold'>Fan activity</h2>
+            <Link href={`/profiles/${session.username}`} className='text-sm text-violet-300 hover:text-violet-200'>Open full profile</Link>
+          </div>
+          <div className='grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+            <div className='rounded-xl border border-zinc-700 bg-zinc-950/60 p-3'><p className='text-xs uppercase tracking-wide text-zinc-500'>Saved pages</p><p className='mt-1 text-2xl font-bold'>{fanStats.saved_pages}</p></div>
+            <div className='rounded-xl border border-zinc-700 bg-zinc-950/60 p-3'><p className='text-xs uppercase tracking-wide text-zinc-500'>Artists followed</p><p className='mt-1 text-2xl font-bold'>{fanStats.artists_followed}</p></div>
+            <div className='rounded-xl border border-zinc-700 bg-zinc-950/60 p-3'><p className='text-xs uppercase tracking-wide text-zinc-500'>Marked going</p><p className='mt-1 text-2xl font-bold'>{fanStats.going_count}</p></div>
+            <div className='rounded-xl border border-zinc-700 bg-zinc-950/60 p-3'><p className='text-xs uppercase tracking-wide text-zinc-500'>Interested</p><p className='mt-1 text-2xl font-bold'>{fanStats.interested_count}</p></div>
+          </div>
+          <div className='space-y-2'>
+            <h3 className='font-medium'>Upcoming gigs you marked as going</h3>
+            {fanUpcoming.length === 0 ? <p className='text-sm text-zinc-400'>No upcoming gigs marked as going yet.</p> : fanUpcoming.map((gig) => (
+              <Link key={gig.id} href={`/gigs/${gig.id}`} className='block rounded-lg border border-zinc-700 bg-zinc-950/50 p-3 text-sm hover:bg-zinc-900'>
+                <p className='font-medium'>{gig.artist_name} <span className='text-zinc-400'>@ {gig.venue_name}</span></p>
+                <p className='text-zinc-300'>{formatDateDDMMYYYY(gig.date)} · {formatTime(gig.start_time, '12h')}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {session.role === 'artist' && (
         <div className='rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
-          <p className='text-zinc-200'>This is the starting point for account tools. We&apos;ll continue to expand this with more shortcuts over time.</p>
+          <p className='text-zinc-200'>Artist tools are available above. Use your profile page for deeper stats and links.</p>
         </div>
       )}
     </div>

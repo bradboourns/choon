@@ -56,7 +56,10 @@ export default async function AdminPage() {
     <section>
       <div className='mb-2 flex items-center justify-between'>
         <h2 className='text-xl'>Venue moderation</h2>
-        <Link href='/admin/venues' className='text-sm underline'>Open venue sub-pages</Link>
+        <div className='flex gap-4 text-sm'>
+          <Link href='/admin/venues' className='underline'>Open venue sub-pages</Link>
+          <Link href='/admin/fans' className='underline'>Open fan moderation</Link>
+        </div>
       </div>
       {venues.length===0 ? <p>No active venues.</p> : venues.map((v) => <div key={v.id} className='my-2 rounded border border-zinc-700 p-3'>
         <p className='font-semibold'>{v.name} · {v.suburb}</p>

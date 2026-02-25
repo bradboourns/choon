@@ -39,9 +39,16 @@ export async function registerAction(formData: FormData) {
   const password = String(formData.get('password') || '');
   const confirmPassword = String(formData.get('confirm_password') || '');
   const role = String(formData.get('role') || 'user');
-  if (!email || password.length < 8 || password !== confirmPassword) redirect('/register?error=invalid-credentials');
+  const username = String(formData.get('username') || '').trim().toLowerCase();
+  const firstName = String(formData.get('first_name') || '').trim();
+  const lastName = String(formData.get('last_name') || '').trim();
+  const dateOfBirth = String(formData.get('date_of_birth') || '').trim();
+  const homeCity = String(formData.get('home_city') || '').trim();
 
-  const ok = await register(email, password, role);
+  if (!email || password.length < 8 || password !== confirmPassword || !username) redirect('/register?error=invalid-credentials');
+  if (role === 'user' && (!firstName || !lastName || !dateOfBirth || !homeCity)) redirect('/register?error=missing-fan-details');
+
+  const ok = await register(email, password, role, { username, firstName, lastName, dateOfBirth, homeCity });
   if (!ok) redirect('/register');
 
   const user = await signIn(email, password);

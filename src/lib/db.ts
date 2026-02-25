@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   bio TEXT NOT NULL DEFAULT '',
   location TEXT NOT NULL DEFAULT '',
   time_format TEXT NOT NULL DEFAULT '12h',
+  first_name TEXT NOT NULL DEFAULT '',
+  last_name TEXT NOT NULL DEFAULT '',
+  date_of_birth TEXT NOT NULL DEFAULT '',
+  home_city TEXT NOT NULL DEFAULT '',
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
@@ -181,6 +185,18 @@ const profileColumns = db.prepare('PRAGMA table_info(user_profiles)').all() as A
 if (!profileColumns.some((column) => column.name === 'time_format')) {
   db.exec("ALTER TABLE user_profiles ADD COLUMN time_format TEXT NOT NULL DEFAULT '12h'");
 }
+if (!profileColumns.some((column) => column.name === 'first_name')) {
+  db.exec("ALTER TABLE user_profiles ADD COLUMN first_name TEXT NOT NULL DEFAULT ''");
+}
+if (!profileColumns.some((column) => column.name === 'last_name')) {
+  db.exec("ALTER TABLE user_profiles ADD COLUMN last_name TEXT NOT NULL DEFAULT ''");
+}
+if (!profileColumns.some((column) => column.name === 'date_of_birth')) {
+  db.exec("ALTER TABLE user_profiles ADD COLUMN date_of_birth TEXT NOT NULL DEFAULT ''");
+}
+if (!profileColumns.some((column) => column.name === 'home_city')) {
+  db.exec("ALTER TABLE user_profiles ADD COLUMN home_city TEXT NOT NULL DEFAULT ''");
+}
 
 const venueRequestColumns = db.prepare('PRAGMA table_info(venue_requests)').all() as Array<{ name: string }>;
 if (!venueRequestColumns.some((column) => column.name === 'provisional_venue_id')) {
@@ -211,6 +227,13 @@ const standardAccounts = [
   { username: 'venue', email: 'venue@choon.local', role: 'venue_admin', displayName: 'Venue Admin' },
   { username: 'bine', email: 'hello@bine.com.au', role: 'venue_admin', displayName: 'Bine Bar and Dining' },
   { username: 'dendevine', email: 'bookings@dendevine.com.au', role: 'venue_admin', displayName: 'Den Devine' },
+  { username: 'miamimarketta', email: 'events@miamimarketta.com', role: 'venue_admin', displayName: 'Miami Marketta Team' },
+  { username: 'vinnies', email: 'bookings@vinniesdivebar.com.au', role: 'venue_admin', displayName: "Vinnie\'s Dive Team" },
+  { username: 'hota', email: 'programming@hota.com.au', role: 'venue_admin', displayName: 'HOTA Programming' },
+  { username: 'surf_soul_amy', email: 'amy.fan@choon.local', role: 'user', displayName: 'Surf Soul Amy' },
+  { username: 'vinyl_mick', email: 'mick.fan@choon.local', role: 'user', displayName: 'Vinyl Mick' },
+  { username: 'nightowl_jules', email: 'jules.fan@choon.local', role: 'user', displayName: 'Nightowl Jules' },
+  { username: 'festival_rae', email: 'rae.fan@choon.local', role: 'user', displayName: 'Festival Rae' },
 ] as const;
 
 const existingUsers = db.prepare('SELECT username, role FROM users ORDER BY username').all() as Array<{ username: string; role: string }>;
@@ -228,6 +251,9 @@ if (existingSignature !== expectedSignature) {
     db.exec('DELETE FROM venue_requests;');
     db.exec('DELETE FROM reports;');
     db.exec('DELETE FROM saved_gigs;');
+    db.exec('DELETE FROM gig_interest;');
+    db.exec('DELETE FROM artist_follows;');
+    db.exec('DELETE FROM partnerships;');
     db.exec('DELETE FROM venue_onboarding_leads;');
     db.exec('DELETE FROM gigs;');
     db.exec('DELETE FROM venues;');
@@ -236,13 +262,13 @@ if (existingSignature !== expectedSignature) {
     db.exec('DELETE FROM users;');
 
     const userInsert = db.prepare('INSERT INTO users (username,email,password_hash,role,email_verified) VALUES (?,?,?,?,?)');
-    const profileInsert = db.prepare('INSERT INTO user_profiles (user_id,display_name,bio,location) VALUES (?,?,?,?)');
+    const profileInsert = db.prepare('INSERT INTO user_profiles (user_id,display_name,bio,location,first_name,last_name,date_of_birth,home_city) VALUES (?,?,?,?,?,?,?,?)');
     const artistInsert = db.prepare('INSERT INTO artists (display_name,instagram,created_by_user_id) VALUES (?,?,?)');
 
     for (const account of standardAccounts) {
       const result = userInsert.run(account.username, account.email, hash, account.role, 1);
       const userId = Number(result.lastInsertRowid);
-      profileInsert.run(userId, account.displayName, `${account.displayName} account`, 'Gold Coast');
+      profileInsert.run(userId, account.displayName, `${account.displayName} account`, 'Gold Coast', '', '', '', 'Gold Coast');
       if (account.role === 'artist') {
         artistInsert.run(account.displayName, 'admin_artist_choon', userId);
       }
@@ -253,11 +279,11 @@ if (existingSignature !== expectedSignature) {
 }
 
 const goldCoastVenues = [
-  { name: 'Miami Marketta', abn: '11 111 111 111', address: '23 Hillcrest Parade', suburb: 'Miami', city: 'Gold Coast', state: 'QLD', postcode: '4220', lat: -28.0747, lng: 153.4438, website: 'https://www.miamimarketta.com', instagram: 'miamimarketta' },
-  { name: 'Vinnie\'s Dive Bar', abn: '22 222 222 222', address: '44A Nerang St', suburb: 'Southport', city: 'Gold Coast', state: 'QLD', postcode: '4215', lat: -27.9697, lng: 153.4094, website: 'https://vinniesdivebar.com.au', instagram: 'vinniesdive' },
-  { name: 'HOTA Outdoor Stage', abn: '33 333 333 333', address: '135 Bundall Rd', suburb: 'Surfers Paradise', city: 'Gold Coast', state: 'QLD', postcode: '4217', lat: -28.0032, lng: 153.4177, website: 'https://hota.com.au', instagram: 'hotagc' },
-  { name: 'Bine Bar and Dining', abn: '44 444 444 444', address: '1/28 Chairlift Ave', suburb: 'Mermaid Beach', city: 'Gold Coast', state: 'QLD', postcode: '4218', lat: -28.0446, lng: 153.4344, website: 'https://www.bine.com.au', instagram: 'binebardining' },
-  { name: 'Den Devine', abn: '55 555 555 555', address: 'Oracle Blvd', suburb: 'Broadbeach', city: 'Gold Coast', state: 'QLD', postcode: '4218', lat: -28.0307, lng: 153.4295, website: 'https://dendevine.com.au', instagram: 'dendevine' },
+  { name: 'Miami Marketta', accountUsername: 'miamimarketta', abn: '11 111 111 111', address: '23 Hillcrest Parade', suburb: 'Miami', city: 'Gold Coast', state: 'QLD', postcode: '4220', lat: -28.0747, lng: 153.4438, website: 'https://www.miamimarketta.com', instagram: 'miamimarketta' },
+  { name: 'Vinnie\'s Dive Bar', accountUsername: 'vinnies', abn: '22 222 222 222', address: '44A Nerang St', suburb: 'Southport', city: 'Gold Coast', state: 'QLD', postcode: '4215', lat: -27.9697, lng: 153.4094, website: 'https://vinniesdivebar.com.au', instagram: 'vinniesdive' },
+  { name: 'HOTA Outdoor Stage', accountUsername: 'hota', abn: '33 333 333 333', address: '135 Bundall Rd', suburb: 'Surfers Paradise', city: 'Gold Coast', state: 'QLD', postcode: '4217', lat: -28.0032, lng: 153.4177, website: 'https://hota.com.au', instagram: 'hotagc' },
+  { name: 'Bine Bar and Dining', accountUsername: 'bine', abn: '44 444 444 444', address: '1/28 Chairlift Ave', suburb: 'Mermaid Beach', city: 'Gold Coast', state: 'QLD', postcode: '4218', lat: -28.0446, lng: 153.4344, website: 'https://www.bine.com.au', instagram: 'binebardining' },
+  { name: 'Den Devine', accountUsername: 'dendevine', abn: '55 555 555 555', address: 'Oracle Blvd', suburb: 'Broadbeach', city: 'Gold Coast', state: 'QLD', postcode: '4218', lat: -28.0307, lng: 153.4295, website: 'https://dendevine.com.au', instagram: 'dendevine' },
 ] as const;
 
 const existingVenues = db.prepare('SELECT name, city FROM venues ORDER BY name').all() as Array<{ name: string; city: string }>;
@@ -298,30 +324,184 @@ if (venueMasterAccount) {
   `);
 }
 
-
-const bineAccount = db.prepare("SELECT id FROM users WHERE username = 'bine' LIMIT 1").get() as { id: number } | undefined;
-if (bineAccount) {
+for (const venue of goldCoastVenues) {
+  const account = db.prepare('SELECT id FROM users WHERE username = ? LIMIT 1').get(venue.accountUsername) as { id: number } | undefined;
+  if (!account) continue;
   db.prepare(`INSERT OR IGNORE INTO venue_memberships (venue_id,user_id,role,approved)
-    SELECT id, ?, 'owner', 1 FROM venues WHERE name='Bine Bar and Dining'`).run(bineAccount.id);
+    SELECT id, ?, 'owner', 1 FROM venues WHERE name = ?`).run(account.id, venue.name);
 }
 
-const denDevineAccount = db.prepare("SELECT id FROM users WHERE username = 'dendevine' LIMIT 1").get() as { id: number } | undefined;
-if (denDevineAccount) {
-  db.prepare(`INSERT OR IGNORE INTO venue_memberships (venue_id,user_id,role,approved)
-    SELECT id, ?, 'owner', 1 FROM venues WHERE name='Den Devine'`).run(denDevineAccount.id);
-}
+const daysFromNow = (days: number) => new Date(Date.now() + (days * 86400000)).toISOString().slice(0, 10);
+const fallbackCreator =
+  (db.prepare("SELECT id FROM users WHERE username = 'admin'").get() as { id: number } | undefined)?.id || 1;
 
-const gigCount = db.prepare('SELECT COUNT(*) count FROM gigs').get() as { count: number };
-if (gigCount.count === 0) {
-  const fallbackCreator =
-    (db.prepare("SELECT id FROM users WHERE username = 'admin'").get() as { id: number } | undefined)?.id || 1;
-  db.exec(`
-  INSERT INTO gigs (venue_id,artist_name,date,start_time,price_type,ticket_price,ticket_url,description,genres,vibe_tags,status,needs_review,created_by_user_id,poster_url)
-  VALUES
-  (1,'Neon Koala','${new Date().toISOString().slice(0,10)}','19:30','Ticketed',32.00,'https://example.com/tickets','Indie dance with synth hooks.','["Indie","Electronic"]','["Loud","Sweaty"]','approved',0,${fallbackCreator},'https://images.unsplash.com/photo-1493225457124-a3eb161ffa5f?w=1200'),
-  (2,'The Yard Dogs','${new Date(Date.now()+86400000).toISOString().slice(0,10)}','20:00','Door',20.00,NULL,'Garage rock all night.','["Rock","Garage"]','["Raw","Noisy"]','approved',0,${fallbackCreator},'https://images.unsplash.com/photo-1501386761578-eac5c94b800a?w=1200'),
-  (3,'Mina Vale','${new Date(Date.now()+2*86400000).toISOString().slice(0,10)}','18:30','Free',0,NULL,'Soulful sunset set.','["Soul","Pop"]','["Chill","Date night"]','approved',0,${fallbackCreator},'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=1200');
+const seededEvents = [
+  {
+    venue: 'Miami Marketta',
+    artist_name: 'Blues on Broadbeach Preview Night',
+    date: daysFromNow(9),
+    start_time: '19:00',
+    price_type: 'Free',
+    ticket_price: 0,
+    ticket_url: 'https://bluesonbroadbeach.com',
+    description: 'Known Gold Coast festival warm-up featuring local blues and roots acts.',
+    genres: '["Blues","Rock"]',
+    vibe_tags: '["Chill","Date night"]',
+  },
+  {
+    venue: 'HOTA Outdoor Stage',
+    artist_name: 'BLEACH* Festival Opening Concert',
+    date: daysFromNow(20),
+    start_time: '18:30',
+    price_type: 'Ticketed',
+    ticket_price: 45,
+    ticket_url: 'https://bleachfestival.com.au',
+    description: 'Opening showcase aligned with the annual BLEACH* arts and music program.',
+    genres: '["Indie","Electronic"]',
+    vibe_tags: '["Loud","Dancey"]',
+  },
+  {
+    venue: 'Vinnie\'s Dive Bar',
+    artist_name: 'Groundwater Country Showcase',
+    date: daysFromNow(34),
+    start_time: '20:00',
+    price_type: 'Door',
+    ticket_price: 25,
+    ticket_url: 'https://groundwatercmf.com',
+    description: 'Country and roots spotlight inspired by Groundwater Country Music Festival week.',
+    genres: '["Country","Rock"]',
+    vibe_tags: '["Loud","Sweaty"]',
+  },
+  {
+    venue: 'Den Devine',
+    artist_name: 'Gold Coast 500 Live Sessions',
+    date: daysFromNow(48),
+    start_time: '21:00',
+    price_type: 'Ticketed',
+    ticket_price: 30,
+    ticket_url: 'https://www.supercars.com/events/2026-boost-mobile-gold-coast-500',
+    description: 'Late-night live set for race-week visitors and locals.',
+    genres: '["Electronic","Pop"]',
+    vibe_tags: '["Loud","Sweaty"]',
+  },
+  {
+    venue: 'Bine Bar and Dining',
+    artist_name: 'Pacific Airshow Rooftop Afterparty',
+    date: daysFromNow(63),
+    start_time: '19:30',
+    price_type: 'Ticketed',
+    ticket_price: 38,
+    ticket_url: 'https://pacificairshowaus.com',
+    description: 'Post-airshow party set with upbeat DJ and indie-pop support acts.',
+    genres: '["Pop","Electronic"]',
+    vibe_tags: '["Dancey","Date night"]',
+  },
+  {
+    venue: 'HOTA Outdoor Stage',
+    artist_name: 'Gold Coast Marathon Recovery Sunset Set',
+    date: daysFromNow(78),
+    start_time: '17:30',
+    price_type: 'Free',
+    ticket_price: 0,
+    ticket_url: 'https://goldcoastmarathon.com.au',
+    description: 'Laid-back soul and acoustic performances after marathon weekend.',
+    genres: '["Soul","Acoustic"]',
+    vibe_tags: '["Chill","Date night"]',
+  },
+];
+
+const currentGigSignature = JSON.stringify(
+  (db.prepare("SELECT artist_name FROM gigs WHERE status != 'removed' ORDER BY artist_name").all() as Array<{ artist_name: string }>)
+    .map((gig) => gig.artist_name),
+);
+const expectedGigSignature = JSON.stringify([...seededEvents].map((event) => event.artist_name).sort((a, b) => a.localeCompare(b)));
+
+if (currentGigSignature !== expectedGigSignature) {
+  db.exec('DELETE FROM saved_gigs;');
+  db.exec('DELETE FROM gig_interest;');
+  db.exec('DELETE FROM gigs;');
+
+  const gigInsert = db.prepare(`
+    INSERT INTO gigs
+    (venue_id,artist_name,date,start_time,price_type,ticket_price,ticket_url,description,genres,vibe_tags,status,needs_review,created_by_user_id,poster_url)
+    VALUES
+    ((SELECT id FROM venues WHERE name = ?),?,?,?,?,?,?,?,?,?,'approved',0,?,?)
   `);
+
+  for (const event of seededEvents) {
+    gigInsert.run(
+      event.venue,
+      event.artist_name,
+      event.date,
+      event.start_time,
+      event.price_type,
+      event.ticket_price,
+      event.ticket_url,
+      event.description,
+      event.genres,
+      event.vibe_tags,
+      fallbackCreator,
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=1200',
+    );
+  }
+}
+
+const fanArtists = [
+  { display_name: 'Sunset Echoes', instagram: 'sunsetechoesmusic' },
+  { display_name: 'Palm Circuit', instagram: 'palmcircuit' },
+  { display_name: 'Seaway Motel', instagram: 'seawaymotelband' },
+  { display_name: 'Neon Koala', instagram: 'neonkoalamusic' },
+];
+
+for (const artist of fanArtists) {
+  db.prepare('INSERT OR IGNORE INTO artists (display_name,instagram,created_by_user_id) VALUES (?,?,?)')
+    .run(artist.display_name, artist.instagram, fallbackCreator);
+}
+
+const fanUserIds = db.prepare(`
+  SELECT id, username FROM users
+  WHERE username IN ('fan', 'surf_soul_amy', 'vinyl_mick', 'nightowl_jules', 'festival_rae')
+`).all() as Array<{ id: number; username: string }>;
+
+const gigIds = db.prepare('SELECT id FROM gigs ORDER BY date ASC, start_time ASC').all() as Array<{ id: number }>;
+const artistIds = db.prepare(`
+  SELECT id, display_name FROM artists
+  WHERE display_name IN ('Artist Admin', 'Sunset Echoes', 'Palm Circuit', 'Seaway Motel', 'Neon Koala')
+`).all() as Array<{ id: number; display_name: string }>;
+
+const fanSavedPlan: Record<string, number[]> = {
+  fan: [0, 1, 2],
+  surf_soul_amy: [0, 2, 4],
+  vinyl_mick: [1, 3, 5],
+  nightowl_jules: [0, 3, 4],
+  festival_rae: [2, 4, 5],
+};
+
+for (const fan of fanUserIds) {
+  const indexes = fanSavedPlan[fan.username] || [0, 1];
+  for (const index of indexes) {
+    const gig = gigIds[index];
+    if (!gig) continue;
+    db.prepare('INSERT OR IGNORE INTO saved_gigs (user_id,gig_id) VALUES (?,?)').run(fan.id, gig.id);
+    db.prepare('INSERT OR IGNORE INTO gig_interest (user_id,gig_id,status) VALUES (?,?,?)').run(fan.id, gig.id, 'going');
+  }
+}
+
+const fanFollows: Record<string, string[]> = {
+  fan: ['Artist Admin', 'Sunset Echoes'],
+  surf_soul_amy: ['Sunset Echoes', 'Neon Koala'],
+  vinyl_mick: ['Palm Circuit', 'Seaway Motel'],
+  nightowl_jules: ['Artist Admin', 'Palm Circuit'],
+  festival_rae: ['Sunset Echoes', 'Seaway Motel'],
+};
+
+for (const fan of fanUserIds) {
+  const targetArtists = fanFollows[fan.username] || [];
+  for (const artistName of targetArtists) {
+    const artist = artistIds.find((entry) => entry.display_name === artistName);
+    if (!artist) continue;
+    db.prepare('INSERT OR IGNORE INTO artist_follows (user_id,artist_id) VALUES (?,?)').run(fan.id, artist.id);
+  }
 }
 
 export default db;

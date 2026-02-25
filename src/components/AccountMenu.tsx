@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { logoutAction } from '@/app/actions';
 
-export default function AccountMenu({ canPostGig, isVenueAdmin }: { canPostGig: boolean; isVenueAdmin: boolean }) {
+export default function AccountMenu({ canPostGig, isVenueAdmin, username }: { canPostGig: boolean; isVenueAdmin: boolean; username: string }) {
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,6 +49,7 @@ export default function AccountMenu({ canPostGig, isVenueAdmin }: { canPostGig: 
       </button>
       {open && (
         <div className='absolute right-0 mt-2 min-w-44 rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl'>
+          <Link onClick={() => setOpen(false)} href={`/profiles/${username}`} className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Profile</Link>
           <Link onClick={() => setOpen(false)} href='/dashboard' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Dashboard</Link>
           <Link onClick={() => setOpen(false)} href='/analytics' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Analytics</Link>
           <Link onClick={() => setOpen(false)} href='/settings' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Settings</Link>

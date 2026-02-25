@@ -7,6 +7,14 @@ const secret = new TextEncoder().encode(process.env.AUTH_SECRET || 'dev-secret-c
 
 export type SessionUser = { id: number; username: string; role: string };
 
+type RegisterOptions = {
+  username?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: string;
+  homeCity?: string;
+};
+
 const adminLoginAliases: Record<string, string> = {
   admin: 'admin',
   fan: 'fan',
@@ -32,23 +40,48 @@ export async function signIn(username: string, password: string) {
   return user;
 }
 
-export async function register(username: string, password: string, role = 'user') {
-  const normalizedUsername = username.trim().toLowerCase();
-  if (!normalizedUsername.includes('@')) return false;
-  const emailLocalPart = normalizedUsername.split('@')[0].replace(/[^a-z0-9._-]/g, '') || 'venue';
-  const usernameBase = emailLocalPart.slice(0, 24);
+export async function register(email: string, password: string, role = 'user', options: RegisterOptions = {}) {
+  const normalizedEmail = email.trim().toLowerCase();
+  if (!normalizedEmail.includes('@')) return false;
+
+  const requestedUsername = (options.username || '').trim().toLowerCase();
+  const usernameCandidateBase = requestedUsername || normalizedEmail.split('@')[0].replace(/[^a-z0-9._-]/g, '') || 'member';
+  const usernameBase = usernameCandidateBase.slice(0, 24);
+  if (!usernameBase) return false;
+
+  const firstName = (options.firstName || '').trim();
+  const lastName = (options.lastName || '').trim();
+  const dateOfBirth = (options.dateOfBirth || '').trim();
+  const homeCity = (options.homeCity || '').trim();
+
+  if (role === 'user') {
+    if (!firstName || !lastName || !dateOfBirth || !homeCity) return false;
+  }
+
   const hash = await bcrypt.hash(password, 10);
-  const displayName = usernameBase.replace(/[._-]+/g, ' ').replace(/\b\w/g, (x) => x.toUpperCase());
+  const displayName = role === 'user' && firstName && lastName
+    ? `${firstName} ${lastName}`
+    : usernameBase.replace(/[._-]+/g, ' ').replace(/\b\w/g, (x) => x.toUpperCase());
+
   const tx = db.transaction(() => {
-    let usernameCandidate = usernameBase;
-    let suffix = 1;
-    while (db.prepare('SELECT id FROM users WHERE username = ?').get(usernameCandidate)) {
-      usernameCandidate = `${usernameBase}${suffix}`;
-      suffix += 1;
+    if (db.prepare('SELECT id FROM users WHERE username = ?').get(usernameBase)) {
+      throw new Error('username-taken');
     }
-    const user = db.prepare('INSERT INTO users (username,email,password_hash,role) VALUES (?,?,?,?)').run(usernameCandidate, normalizedUsername, hash, role);
-    db.prepare('INSERT INTO user_profiles (user_id,display_name,bio,location) VALUES (?,?,?,?)').run(Number(user.lastInsertRowid), displayName, '', 'Gold Coast');
+
+    const user = db.prepare('INSERT INTO users (username,email,password_hash,role) VALUES (?,?,?,?)').run(usernameBase, normalizedEmail, hash, role);
+    db.prepare(`INSERT INTO user_profiles (user_id,display_name,bio,location,first_name,last_name,date_of_birth,home_city)
+      VALUES (?,?,?,?,?,?,?,?)`).run(
+      Number(user.lastInsertRowid),
+      displayName,
+      '',
+      role === 'user' ? '' : 'Gold Coast',
+      firstName,
+      lastName,
+      dateOfBirth,
+      homeCity,
+    );
   });
+
   try { tx(); return true; } catch { return false; }
 }
 

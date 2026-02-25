@@ -26,5 +26,10 @@ export default async function Home() {
 
   const interestByGig = Object.fromEntries(interestRows.map((row) => [row.gig_id, row.status]));
 
-  return <HomeFeed initial={gigs} isLoggedIn={Boolean(session)} savedGigIds={savedGigIds} interestByGig={interestByGig} followedArtistIds={followedArtistIds} />;
+  const fanHomeCity = session
+    ? (db.prepare('SELECT home_city FROM user_profiles WHERE user_id = ?').get(session.id) as { home_city: string } | undefined)?.home_city || ''
+    : '';
+  const defaultCity = fanHomeCity || 'Gold Coast';
+
+  return <HomeFeed initial={gigs} isLoggedIn={Boolean(session)} savedGigIds={savedGigIds} interestByGig={interestByGig} followedArtistIds={followedArtistIds} defaultCity={defaultCity} />;
 }
