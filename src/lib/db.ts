@@ -93,6 +93,7 @@ CREATE TABLE IF NOT EXISTS gigs (
   vibe_tags TEXT NOT NULL,
   poster_url TEXT,
   status TEXT NOT NULL DEFAULT 'approved',
+  admin_note TEXT NOT NULL DEFAULT '',
   needs_review INTEGER NOT NULL DEFAULT 1,
   created_by_user_id INTEGER NOT NULL,
   created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -137,6 +138,10 @@ if (!gigColumns.some((column) => column.name === 'needs_review')) {
 }
 if (!gigColumns.some((column) => column.name === 'ticket_price')) {
   db.exec('ALTER TABLE gigs ADD COLUMN ticket_price REAL');
+}
+
+if (!gigColumns.some((column) => column.name === 'admin_note')) {
+  db.exec("ALTER TABLE gigs ADD COLUMN admin_note TEXT NOT NULL DEFAULT ''");
 }
 
 const standardAccounts = [

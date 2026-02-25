@@ -5,12 +5,37 @@ import db from '@/lib/db';
 import { getSession, register, signIn, signOut } from '@/lib/auth';
 
 export async function registerAction(formData: FormData) {
-  const username = String(formData.get('username') || '');
+  const email = String(formData.get('email') || '').trim().toLowerCase();
   const password = String(formData.get('password') || '');
+  const confirmPassword = String(formData.get('confirm_password') || '');
   const role = String(formData.get('role') || 'user');
-  const ok = await register(username, password, role);
+  if (!email || password.length < 8 || password !== confirmPassword) redirect('/register?error=invalid-credentials');
+
+  const ok = await register(email, password, role);
   if (!ok) redirect('/register');
-  await signIn(username, password);
+
+  const user = await signIn(email, password);
+  if (!user) redirect('/login');
+
+  if (role === 'venue_admin') {
+    db.prepare(`INSERT INTO venue_requests
+      (requested_by_user_id,venue_name,abn,address,suburb,city,state,postcode,website,instagram,notes,status)
+      VALUES (?,?,?,?,?,?,?,?,?,?,?,?)`).run(
+      user.id,
+      String(formData.get('venue_name') || ''),
+      String(formData.get('abn') || ''),
+      String(formData.get('address') || ''),
+      String(formData.get('suburb') || ''),
+      String(formData.get('city') || 'Gold Coast'),
+      String(formData.get('state') || 'QLD'),
+      String(formData.get('postcode') || ''),
+      String(formData.get('website') || ''),
+      String(formData.get('instagram') || ''),
+      String(formData.get('notes') || ''),
+      'pending',
+    );
+  }
+
   redirect('/');
 }
 
@@ -134,7 +159,19 @@ export async function adminRemoveGigAction(formData: FormData) {
   const session = await getSession();
   if (!session || session.role !== 'admin') redirect('/');
   db.prepare("UPDATE gigs SET status='removed', updated_at=CURRENT_TIMESTAMP WHERE id=?").run(Number(formData.get('gig_id')));
-  redirect('/admin');
+  redirect(String(formData.get('return_to') || '/admin'));
+}
+
+export async function adminUpdateGigStatusAction(formData: FormData) {
+  const session = await getSession();
+  if (!session || session.role !== 'admin') redirect('/');
+
+  const gigId = Number(formData.get('gig_id'));
+  const status = String(formData.get('status') || 'approved');
+  const note = String(formData.get('admin_note') || '');
+
+  db.prepare('UPDATE gigs SET status=?, admin_note=?, needs_review=0, updated_at=CURRENT_TIMESTAMP WHERE id=?').run(status, note, gigId);
+  redirect(String(formData.get('return_to') || '/admin'));
 }
 
 export async function adminDismissGigFlagAction(formData: FormData) {

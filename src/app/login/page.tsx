@@ -7,8 +7,8 @@ export default function LoginPage() {
     <div className='mx-auto flex max-w-md flex-col gap-4 rounded-xl border border-zinc-700 p-4'>
       <form action={loginAction} className='flex flex-col gap-3'>
         <h1 className='text-2xl font-bold'>Log in</h1>
-        <p className='text-sm text-zinc-400'>Use your username. For demo profiles you can also use: admin, venue, fan, artist.</p>
-        <input name='username' type='text' required placeholder='Username' className='rounded bg-zinc-900 p-2' />
+        <p className='text-sm text-zinc-400'>Use your email or username. For demo profiles you can also use: admin, venue, fan, artist.</p>
+        <input name='username' type='text' required placeholder='Email or username' className='rounded bg-zinc-900 p-2' />
         <input name='password' type='password' required placeholder='Password' className='rounded bg-zinc-900 p-2' />
         <button className='rounded bg-violet-600 p-2'>Log in</button>
       </form>

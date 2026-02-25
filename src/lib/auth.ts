@@ -21,7 +21,7 @@ function normalizeLoginIdentifier(value: string) {
 
 export async function signIn(username: string, password: string) {
   const loginIdentifier = normalizeLoginIdentifier(username);
-  const user = db.prepare('SELECT * FROM users WHERE username = ?').get(loginIdentifier) as any;
+  const user = db.prepare('SELECT * FROM users WHERE username = ? OR email = ?').get(loginIdentifier, loginIdentifier) as any;
   if (!user || !(await bcrypt.compare(password, user.password_hash))) return null;
   const token = await new SignJWT({ id: user.id, username: user.username, role: user.role })
     .setProtectedHeader({ alg: 'HS256' })
@@ -34,10 +34,19 @@ export async function signIn(username: string, password: string) {
 
 export async function register(username: string, password: string, role = 'user') {
   const normalizedUsername = username.trim().toLowerCase();
+  if (!normalizedUsername.includes('@')) return false;
+  const emailLocalPart = normalizedUsername.split('@')[0].replace(/[^a-z0-9._-]/g, '') || 'venue';
+  const usernameBase = emailLocalPart.slice(0, 24);
   const hash = await bcrypt.hash(password, 10);
-  const displayName = normalizedUsername.replace(/[._-]+/g, ' ').replace(/\b\w/g, (x) => x.toUpperCase());
+  const displayName = usernameBase.replace(/[._-]+/g, ' ').replace(/\b\w/g, (x) => x.toUpperCase());
   const tx = db.transaction(() => {
-    const user = db.prepare('INSERT INTO users (username,email,password_hash,role) VALUES (?,?,?,?)').run(normalizedUsername, null, hash, role);
+    let usernameCandidate = usernameBase;
+    let suffix = 1;
+    while (db.prepare('SELECT id FROM users WHERE username = ?').get(usernameCandidate)) {
+      usernameCandidate = `${usernameBase}${suffix}`;
+      suffix += 1;
+    }
+    const user = db.prepare('INSERT INTO users (username,email,password_hash,role) VALUES (?,?,?,?)').run(usernameCandidate, normalizedUsername, hash, role);
     db.prepare('INSERT INTO user_profiles (user_id,display_name,bio,location) VALUES (?,?,?,?)').run(Number(user.lastInsertRowid), displayName, '', 'Gold Coast');
   });
   try { tx(); return true; } catch { return false; }

@@ -1,10 +1,10 @@
 import { getSession } from '@/lib/auth';
 import db from '@/lib/db';
 import { redirect } from 'next/navigation';
+import Link from 'next/link';
 import {
   adminDismissGigFlagAction,
   adminRemoveGigAction,
-  adminRemoveVenueAction,
   adminReviewVenueRequestAction,
 } from '../actions';
 
@@ -17,7 +17,11 @@ export default async function AdminPage() {
     WHERE gigs.needs_review=1 AND gigs.status!='removed'
     ORDER BY gigs.created_at DESC`).all() as any[];
   const venueRequests = db.prepare("SELECT venue_requests.*, users.username requester_username FROM venue_requests JOIN users ON users.id=venue_requests.requested_by_user_id WHERE venue_requests.status='pending' ORDER BY venue_requests.created_at DESC").all() as any[];
-  const venues = db.prepare('SELECT * FROM venues WHERE approved=1 ORDER BY created_at DESC').all() as any[];
+  const venues = db.prepare(`SELECT venues.*, COUNT(gigs.id) gig_count
+    FROM venues LEFT JOIN gigs ON gigs.venue_id=venues.id AND gigs.status!='removed'
+    WHERE venues.approved=1
+    GROUP BY venues.id
+    ORDER BY venues.created_at DESC`).all() as any[];
   const reports = db.prepare("SELECT * FROM reports WHERE status='open' ORDER BY created_at DESC").all() as any[];
 
   return <div className='space-y-6'>
@@ -50,10 +54,14 @@ export default async function AdminPage() {
     </section>
 
     <section>
-      <h2 className='text-xl'>Approved venues</h2>
+      <div className='mb-2 flex items-center justify-between'>
+        <h2 className='text-xl'>Venue moderation</h2>
+        <Link href='/admin/venues' className='text-sm underline'>Open venue sub-pages</Link>
+      </div>
       {venues.length===0 ? <p>No active venues.</p> : venues.map((v) => <div key={v.id} className='my-2 rounded border border-zinc-700 p-3'>
-        <p>{v.name} · {v.suburb}</p>
-        <form action={adminRemoveVenueAction} className='mt-2'><input type='hidden' name='venue_id' value={v.id}/><button className='rounded bg-rose-700 px-2 py-1'>Remove venue + gigs</button></form>
+        <p className='font-semibold'>{v.name} · {v.suburb}</p>
+        <p className='text-sm text-zinc-400'>{v.gig_count} active gigs</p>
+        <Link href={`/admin/venues/${v.id}`} className='mt-2 inline-block rounded bg-zinc-100 px-2 py-1 text-sm text-zinc-900'>Manage venue</Link>
       </div>)}
     </section>
 
