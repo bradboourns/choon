@@ -4,6 +4,12 @@ import { redirect } from 'next/navigation';
 import db from '@/lib/db';
 import { getSession, register, signIn, signOut } from '@/lib/auth';
 
+
+function redirectAfterAuth(role: string) {
+  if (role === 'admin') redirect('/dashboard');
+  redirect('/');
+}
+
 export async function registerAction(formData: FormData) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const password = String(formData.get('password') || '');
@@ -36,19 +42,19 @@ export async function registerAction(formData: FormData) {
     );
   }
 
-  redirect('/');
+  redirectAfterAuth(user.role);
 }
 
 export async function loginAction(formData: FormData) {
   const user = await signIn(String(formData.get('username') || ''), String(formData.get('password') || ''));
   if (!user) redirect('/login');
-  redirect('/');
+  redirectAfterAuth(user.role);
 }
 
 export async function quickLoginAction(formData: FormData) {
   const user = await signIn(String(formData.get('profile') || ''), 'password');
   if (!user) redirect('/login');
-  redirect('/');
+  redirectAfterAuth(user.role);
 }
 
 export async function logoutAction() { await signOut(); redirect('/'); }
