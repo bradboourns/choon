@@ -3,13 +3,19 @@ import './globals.css';
 import Link from 'next/link';
 import Image from 'next/image';
 import { getSession } from '@/lib/auth';
-import { logoutAction } from './actions';
+import AccountMenu from '@/components/AccountMenu';
 
 export const metadata: Metadata = { title: 'Choon | Live Music Near You', description: 'Find live gigs near you.' };
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const session = await getSession();
   const canPostGig = session?.role === 'artist' || session?.role === 'venue_admin';
+  const roleLabel: Record<string, string> = {
+    admin: 'Platform admin',
+    artist: 'Artist',
+    venue_admin: 'Venue',
+    user: 'Music fan',
+  };
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -22,24 +28,15 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </Link>
 
             <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
+              {session && (
+                <span className="rounded-full border border-zinc-800 bg-zinc-900/60 px-3 py-1 text-xs text-zinc-400" title="Current account type">
+                  {roleLabel[session.role] || 'Member'}
+                </span>
+              )}
               {session && <Link href="/saved" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Saved</Link>}
               {session?.role === 'admin' && <Link href="/admin" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Admin</Link>}
               {session ? (
-                <details className="relative">
-                  <summary className="list-none cursor-pointer rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">
-                    Account
-                  </summary>
-                  <div className="absolute right-0 mt-2 min-w-44 rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
-                    <Link href="/dashboard" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Dashboard</Link>
-                    <Link href="/analytics" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Analytics</Link>
-                    <Link href="/settings" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Settings</Link>
-                    {canPostGig && <Link href="/create-gig" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Post gig</Link>}
-                    {session?.role === 'venue_admin' && <Link href="/request-venue" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Request venue</Link>}
-                    <form action={logoutAction}>
-                      <button className="w-full rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Log out</button>
-                    </form>
-                  </div>
-                </details>
+                <AccountMenu canPostGig={canPostGig} isVenueAdmin={session.role === 'venue_admin'} />
               ) : (
                 <>
                   <Link href="/login" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Log in</Link>

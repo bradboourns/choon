@@ -147,6 +147,12 @@ export async function adminReviewVenueRequestAction(formData: FormData) {
     );
     const venueId = Number(insertedVenue.lastInsertRowid);
     db.prepare('INSERT OR REPLACE INTO venue_memberships (venue_id,user_id,role,approved) VALUES (?,?,?,1)').run(venueId, request.requested_by_user_id, 'owner');
+
+    const venueMaster = db.prepare("SELECT id FROM users WHERE username='venue' LIMIT 1").get() as { id: number } | undefined;
+    if (venueMaster) {
+      db.prepare('INSERT OR IGNORE INTO venue_memberships (venue_id,user_id,role,approved) VALUES (?,?,?,1)').run(venueId, venueMaster.id, 'owner');
+    }
+
     db.prepare('UPDATE venue_requests SET status=\'approved\', reviewed_by_user_id=?, reviewed_at=CURRENT_TIMESTAMP WHERE id=?').run(session.id, requestId);
   } else {
     db.prepare('UPDATE venue_requests SET status=\'rejected\', reviewed_by_user_id=?, reviewed_at=CURRENT_TIMESTAMP WHERE id=?').run(session.id, requestId);
