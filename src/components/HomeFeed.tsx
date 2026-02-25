@@ -88,7 +88,7 @@ export default function HomeFeed({ initial }: { initial: Gig[] }) {
     <div className="space-y-5">
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-zinc-900 via-zinc-900 to-violet-950/70 p-5 shadow-2xl shadow-violet-900/10 md:p-6">
         <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1 rounded-2xl border border-zinc-700 bg-zinc-950/70 p-3">
+          <div className="flex-1 rounded-2xl bg-zinc-950/70 p-3 ring-1 ring-inset ring-white/10 transition focus-within:ring-violet-400/60">
             <input
               placeholder="Search venues, artists, suburbs..."
               className="w-full bg-transparent text-base outline-none"

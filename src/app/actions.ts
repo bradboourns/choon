@@ -17,6 +17,12 @@ export async function loginAction(formData: FormData) {
   redirect('/');
 }
 
+export async function quickLoginAction(formData: FormData) {
+  const user = await signIn(String(formData.get('profile')), 'password');
+  if (!user) redirect('/login');
+  redirect('/');
+}
+
 export async function logoutAction() { await signOut(); redirect('/'); }
 
 export async function createGigAction(formData: FormData) {
