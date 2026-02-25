@@ -4,11 +4,12 @@ import { genres, vibes } from '@/lib/data';
 import { redirect } from 'next/navigation';
 import { createGigAction } from '../actions';
 
-export default async function CreateGig({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
+export default async function CreateGig({ searchParams }: { searchParams: Promise<{ error?: string; venue_id?: string }> }) {
   const session = await getSession();
   if (!session || (session.role !== 'artist' && session.role !== 'venue_admin')) redirect('/login');
 
   const query = await searchParams;
+  const preferredVenueId = query.venue_id ? Number(query.venue_id) : undefined;
   const venues = session.role === 'venue_admin'
     ? db.prepare(`SELECT venues.* FROM venues
       JOIN venue_memberships ON venue_memberships.venue_id = venues.id
@@ -26,7 +27,7 @@ export default async function CreateGig({ searchParams }: { searchParams: Promis
       ) : (
         <>
           <p className='text-sm text-zinc-400'>Venue / Location</p>
-          <select name='venue_id' required className='w-full rounded bg-zinc-900 p-2'>{venues.map((v) => <option key={v.id} value={v.id}>{v.name} ({v.suburb})</option>)}</select>
+          <select name='venue_id' required defaultValue={preferredVenueId && venues.some((v) => v.id === preferredVenueId) ? String(preferredVenueId) : undefined} className='w-full rounded bg-zinc-900 p-2'>{venues.map((v) => <option key={v.id} value={v.id}>{v.name} ({v.suburb})</option>)}</select>
           <input name='artist_name' required placeholder='Artist/band name' className='w-full rounded bg-zinc-900 p-2'/>
           <div className='grid grid-cols-2 gap-2'><input type='date' name='date' required className='rounded bg-zinc-900 p-2'/><input type='time' name='start_time' required className='rounded bg-zinc-900 p-2'/></div>
           <input type='time' name='end_time' className='w-full rounded bg-zinc-900 p-2' placeholder='End time'/>

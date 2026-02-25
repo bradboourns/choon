@@ -220,6 +220,16 @@ if (existingVenueSignature !== expectedVenueSignature) {
   `);
 }
 
+const venueMasterAccount =
+  (db.prepare("SELECT id FROM users WHERE username = 'venue' LIMIT 1").get() as { id: number } | undefined)
+  || (db.prepare("SELECT id FROM users WHERE role = 'venue_admin' ORDER BY id LIMIT 1").get() as { id: number } | undefined);
+if (venueMasterAccount) {
+  db.exec(`
+  INSERT OR IGNORE INTO venue_memberships (venue_id,user_id,role,approved)
+  SELECT id, ${venueMasterAccount.id}, 'owner', 1 FROM venues WHERE approved=1;
+  `);
+}
+
 const gigCount = db.prepare('SELECT COUNT(*) count FROM gigs').get() as { count: number };
 if (gigCount.count === 0) {
   const fallbackCreator =
