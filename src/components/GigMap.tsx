@@ -14,10 +14,16 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
 });
 
-function RecenterMap({ center, radiusKm }: { center: { lat: number; lng: number }; radiusKm: number }) {
+function RecenterMap({ center, radiusKm, gigs }: { center: { lat: number; lng: number }; radiusKm: number; gigs: Array<{ lat: number; lng: number }> }) {
   const map = useMap();
 
   useEffect(() => {
+    if (gigs.length > 0) {
+      const bounds = L.latLngBounds(gigs.map((gig) => [gig.lat, gig.lng] as [number, number]));
+      map.fitBounds(bounds, { padding: [30, 30], maxZoom: 14 });
+      return;
+    }
+
     const latDelta = radiusKm / 111;
     const safeCos = Math.max(0.2, Math.abs(Math.cos((center.lat * Math.PI) / 180)));
     const lngDelta = radiusKm / (111 * safeCos);
@@ -26,7 +32,7 @@ function RecenterMap({ center, radiusKm }: { center: { lat: number; lng: number 
       [center.lat + latDelta, center.lng + lngDelta],
     );
     map.fitBounds(bounds, { padding: [30, 30] });
-  }, [center, radiusKm, map]);
+  }, [center, radiusKm, gigs, map]);
 
   return null;
 }
@@ -44,7 +50,7 @@ export default function GigMap({ gigs, center, radiusKm }: { gigs: any[]; center
   return (
     <>
       <MapContainer center={[center.lat, center.lng]} zoom={11} className="h-[420px] w-full rounded-2xl z-0">
-        <RecenterMap center={center} radiusKm={radiusKm} />
+        <RecenterMap center={center} radiusKm={radiusKm} gigs={gigs} />
         <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
         <Circle
           center={[center.lat, center.lng]}

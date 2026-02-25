@@ -83,7 +83,7 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
   const [tab, setTab] = useState<'list' | 'map'>('list');
   const [search, setSearch] = useState(defaultCity);
   const [price, setPrice] = useState('');
-  const [dateRange, setDateRange] = useState<(typeof dateTabs)[number]['key']>('next7');
+  const [dateRange, setDateRange] = useState<(typeof dateTabs)[number]['key']>('all');
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
   const [mapCenter, setMapCenter] = useState(cityDefaultCenter(defaultCity));
   const [distanceRangeKm, setDistanceRangeKm] = useState(25);

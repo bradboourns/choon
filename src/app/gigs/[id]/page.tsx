@@ -4,6 +4,7 @@ import { getSession } from '@/lib/auth';
 import { formatDateDDMMYYYY, formatTime } from '@/lib/format';
 import db from '@/lib/db';
 import { updateGigDetailsAction } from '@/app/actions';
+import GigShareActions from '@/components/GigShareActions';
 
 export default async function GigPage({ params }: { params: Promise<{ id: string }> }) {
   const p = await params;
@@ -157,8 +158,8 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
       )}
       <div className='mt-4 flex flex-wrap gap-2'>
         <a className='rounded-xl border border-zinc-600 px-4 py-2' href={`https://maps.google.com/?q=${encodeURIComponent(`${gig.address}, ${gig.suburb}, ${gig.city}`)}`}>Get directions</a>
-        <a className='rounded-xl border border-zinc-600 px-4 py-2' href={`https://wa.me/?text=${encodeURIComponent('Check out this gig on Choon: '+process.env.NEXT_PUBLIC_BASE_URL+'/gigs/'+gig.id)}`}>Share</a>
       </div>
+      <GigShareActions gigId={gig.id} artistName={gig.artist_name} venueName={gig.venue_name} />
     </section>
   </article>;
 }
