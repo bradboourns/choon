@@ -21,8 +21,12 @@ export async function signIn(email: string, password: string) {
 
 export async function register(email: string, password: string, role = 'user') {
   const hash = await bcrypt.hash(password, 10);
-  const stmt = db.prepare('INSERT INTO users (email,password_hash,role) VALUES (?,?,?)');
-  try { stmt.run(email, hash, role); return true; } catch { return false; }
+  const displayName = email.split('@')[0].replace(/[._-]+/g, ' ').replace(/\b\w/g, (x) => x.toUpperCase());
+  const tx = db.transaction(() => {
+    const user = db.prepare('INSERT INTO users (email,password_hash,role) VALUES (?,?,?)').run(email, hash, role);
+    db.prepare('INSERT INTO user_profiles (user_id,display_name,bio,location) VALUES (?,?,?,?)').run(Number(user.lastInsertRowid), displayName, '', 'Gold Coast');
+  });
+  try { tx(); return true; } catch { return false; }
 }
 
 export async function getSession(): Promise<SessionUser | null> {

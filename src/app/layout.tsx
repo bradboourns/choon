@@ -9,6 +9,8 @@ export const metadata: Metadata = { title: 'Choon | Live Music Near You', descri
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const session = await getSession();
+  const canPostGig = session?.role === 'artist' || session?.role === 'venue_admin';
+
   return (
     <html lang="en">
       <body className="bg-zinc-950 text-zinc-100">
@@ -20,13 +22,21 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </Link>
 
             <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
-              <Link href="/create-gig" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Post gig</Link>
+              {canPostGig && <Link href="/create-gig" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Post gig</Link>}
               <Link href="/saved" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Saved</Link>
               {session?.role === 'admin' && <Link href="/admin" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Admin</Link>}
               {session ? (
-                <form action={logoutAction}>
-                  <button className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Log out</button>
-                </form>
+                <details className="relative">
+                  <summary className="list-none cursor-pointer rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">
+                    {session.email}
+                  </summary>
+                  <div className="absolute right-0 mt-2 min-w-44 rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
+                    <p className="px-3 py-2 text-xs uppercase tracking-wide text-zinc-400">Signed in</p>
+                    <form action={logoutAction}>
+                      <button className="w-full rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Log out</button>
+                    </form>
+                  </div>
+                </details>
               ) : (
                 <>
                   <Link href="/login" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Log in</Link>

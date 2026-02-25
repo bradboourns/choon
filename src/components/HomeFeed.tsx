@@ -2,9 +2,10 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { useMemo, useState } from 'react';
+import { FormEvent, useMemo, useState } from 'react';
 
 const GigMap = dynamic(() => import('./GigMap'), { ssr: false });
+const defaultMapCenter = { lat: -28.0167, lng: 153.4 };
 
 type Gig = {
   id: number;
@@ -19,6 +20,12 @@ type Gig = {
   vibe_tags: string;
   lat: number;
   lng: number;
+};
+
+type LocationOption = {
+  display_name: string;
+  lat: string;
+  lon: string;
 };
 
 function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
@@ -46,9 +53,12 @@ function parseLocalDate(value: string) {
 export default function HomeFeed({ initial }: { initial: Gig[] }) {
   const [tab, setTab] = useState<'list' | 'map'>('list');
   const [search, setSearch] = useState('');
+  const [locationSearch, setLocationSearch] = useState('Gold Coast');
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationOption[]>([]);
   const [price, setPrice] = useState('');
   const [dateRange, setDateRange] = useState<(typeof dateTabs)[number]['key']>('next7');
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
+  const [mapCenter, setMapCenter] = useState(defaultMapCenter);
 
   const today = useMemo(() => {
     const now = new Date();
@@ -82,6 +92,38 @@ export default function HomeFeed({ initial }: { initial: Gig[] }) {
     [initial, search, price, dateRange, today],
   );
 
+  async function searchLocations(query: string) {
+    setLocationSearch(query);
+    if (query.trim().length < 3) {
+      setLocationSuggestions([]);
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&limit=5&addressdetails=1&q=${encodeURIComponent(query)}`,
+      );
+      const items = (await response.json()) as LocationOption[];
+      setLocationSuggestions(items);
+    } catch {
+      setLocationSuggestions([]);
+    }
+  }
+
+  function selectLocation(option: LocationOption) {
+    setLocationSearch(option.display_name);
+    setLocationSuggestions([]);
+    setMapCenter({ lat: Number(option.lat), lng: Number(option.lon) });
+    setTab('map');
+  }
+
+  async function submitLocationSearch(event: FormEvent) {
+    event.preventDefault();
+    if (locationSuggestions[0]) {
+      selectLocation(locationSuggestions[0]);
+    }
+  }
+
   return (
     <div className="space-y-5">
       <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-zinc-900 via-zinc-900 to-violet-950/70 p-5 shadow-2xl shadow-violet-900/10 md:p-6">
@@ -97,12 +139,41 @@ export default function HomeFeed({ initial }: { initial: Gig[] }) {
           <button
             className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm hover:bg-zinc-800"
             onClick={() =>
-              navigator.geolocation.getCurrentPosition((p) => setLoc({ lat: p.coords.latitude, lng: p.coords.longitude }))
+              navigator.geolocation.getCurrentPosition((p) => {
+                const current = { lat: p.coords.latitude, lng: p.coords.longitude };
+                setLoc(current);
+                setMapCenter(current);
+                setTab('map');
+              })
             }
           >
             Use my location
           </button>
         </div>
+
+        <form onSubmit={submitLocationSearch} className="relative mt-3">
+          <input
+            placeholder="Search location (auto-predict enabled)"
+            className="w-full rounded-2xl border border-zinc-700 bg-zinc-950/70 p-3 text-base outline-none"
+            value={locationSearch}
+            onChange={(e) => searchLocations(e.target.value)}
+          />
+          {locationSuggestions.length > 0 && (
+            <ul className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl">
+              {locationSuggestions.map((option) => (
+                <li key={`${option.lat}-${option.lon}`}>
+                  <button
+                    type="button"
+                    className="w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-zinc-800"
+                    onClick={() => selectLocation(option)}
+                  >
+                    {option.display_name}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </form>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {dateTabs.map((item) => (
@@ -155,7 +226,7 @@ export default function HomeFeed({ initial }: { initial: Gig[] }) {
       </div>
 
       {tab === 'map' ? (
-        <GigMap gigs={gigs} />
+        <GigMap gigs={gigs} center={mapCenter} />
       ) : (
         <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
           {gigs.map((g) => {
