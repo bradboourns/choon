@@ -22,7 +22,6 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
             </Link>
 
             <div className="flex flex-wrap items-center justify-end gap-2 text-sm">
-              {canPostGig && <Link href="/create-gig" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Post gig</Link>}
               {session && <Link href="/saved" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Saved</Link>}
               {session?.role === 'admin' && <Link href="/admin" className="rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900">Admin</Link>}
               {session ? (
@@ -34,6 +33,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                     <Link href="/dashboard" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Dashboard</Link>
                     <Link href="/analytics" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Analytics</Link>
                     <Link href="/settings" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Settings</Link>
+                    {canPostGig && <Link href="/create-gig" className="block rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Post gig</Link>}
                     <form action={logoutAction}>
                       <button className="w-full rounded-lg px-3 py-2 text-left hover:bg-zinc-800">Log out</button>
                     </form>
