@@ -15,11 +15,13 @@ export default async function AdminFansPage() {
       user_profiles.display_name,
       user_profiles.location,
       COUNT(DISTINCT saved_gigs.gig_id) AS saved_count,
-      COUNT(DISTINCT artist_follows.artist_id) AS follow_count
+      COUNT(DISTINCT artist_follows.artist_id) AS follow_count,
+      COUNT(DISTINCT venue_follows.venue_id) AS venue_follow_count
     FROM users
     LEFT JOIN user_profiles ON user_profiles.user_id = users.id
     LEFT JOIN saved_gigs ON saved_gigs.user_id = users.id
     LEFT JOIN artist_follows ON artist_follows.user_id = users.id
+    LEFT JOIN venue_follows ON venue_follows.user_id = users.id
     WHERE users.role = 'user'
     GROUP BY users.id
     ORDER BY saved_count DESC, follow_count DESC, users.username ASC
@@ -31,6 +33,7 @@ export default async function AdminFansPage() {
     location: string;
     saved_count: number;
     follow_count: number;
+    venue_follow_count: number;
   }>;
 
   const savedGigRows = db.prepare(`
@@ -42,6 +45,15 @@ export default async function AdminFansPage() {
     WHERE users.role = 'user' AND gigs.status != 'removed'
     ORDER BY users.username ASC, gigs.date ASC
   `).all() as Array<{ user_id: number; artist_name: string; venue_name: string }>;
+
+  const venueFollowRows = db.prepare(`
+    SELECT users.id user_id, venues.name
+    FROM users
+    JOIN venue_follows ON venue_follows.user_id = users.id
+    JOIN venues ON venues.id = venue_follows.venue_id
+    WHERE users.role = 'user'
+    ORDER BY users.username ASC, venues.name ASC
+  `).all() as Array<{ user_id: number; name: string }>;
 
   const followRows = db.prepare(`
     SELECT users.id user_id, artists.display_name
@@ -65,13 +77,15 @@ export default async function AdminFansPage() {
         {fanAccounts.map((fan) => {
           const saved = savedGigRows.filter((row) => row.user_id === fan.id).map((row) => `${row.artist_name} @ ${row.venue_name}`);
           const follows = followRows.filter((row) => row.user_id === fan.id).map((row) => row.display_name);
+          const venueFollows = venueFollowRows.filter((row) => row.user_id === fan.id).map((row) => row.name);
 
           return <div key={fan.id} className='rounded border border-zinc-700 p-3'>
             <p className='font-semibold'>{fan.display_name} <Link href={`/profiles/${fan.username}`} className='text-zinc-400 underline'>@{fan.username}</Link></p>
             <p className='text-sm text-zinc-400'>{fan.email} · {fan.location || 'Unknown location'}</p>
-            <p className='mt-2 text-sm'>Saved pages: <span className='font-semibold'>{fan.saved_count}</span> · Artist follows: <span className='font-semibold'>{fan.follow_count}</span></p>
+            <p className='mt-2 text-sm'>Saved pages: <span className='font-semibold'>{fan.saved_count}</span> · Artist follows: <span className='font-semibold'>{fan.follow_count}</span> · Venue follows: <span className='font-semibold'>{fan.venue_follow_count}</span></p>
             <p className='mt-2 text-sm text-zinc-300'>Saved gigs: {saved.length ? saved.join(' • ') : 'None yet'}</p>
-            <p className='mt-1 text-sm text-zinc-300'>Follows: {follows.length ? follows.join(' • ') : 'None yet'}</p>
+            <p className='mt-1 text-sm text-zinc-300'>Artist follows: {follows.length ? follows.join(' • ') : 'None yet'}</p>
+            <p className='mt-1 text-sm text-zinc-300'>Venue follows: {venueFollows.length ? venueFollows.join(' • ') : 'None yet'}</p>
           </div>;
         })}
       </div>

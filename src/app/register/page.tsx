@@ -25,7 +25,7 @@ export default function RegisterPage() {
     <select name='role' value={role} onChange={(event) => setRole(event.target.value)} className='rounded bg-zinc-900 p-2'>
       <option value='user'>Music fan</option>
       <option value='artist'>Artist</option>
-      <option value='venue_admin'>Venue admin</option>
+      <option value='venue_admin'>Venue management account</option>
     </select>
 
     {fanRoleSelected && <section className='space-y-2 rounded border border-zinc-800 bg-zinc-950/60 p-3'>

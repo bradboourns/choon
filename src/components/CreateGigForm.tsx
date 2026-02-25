@@ -5,8 +5,9 @@ import { createGigAction } from '@/app/actions';
 
 type Venue = { id: number; name: string; suburb: string; city: string; state: string; approved: number };
 type PartnerArtist = { id: number; display_name: string };
+type PopupCollective = { id: number; name: string; region: string };
 
-export default function CreateGigForm({ venues, preferredVenueId, error, lead, genres, vibes, partneredArtists = [], role }: {
+export default function CreateGigForm({ venues, preferredVenueId, error, lead, genres, vibes, partneredArtists = [], popupCollectives = [], role }: {
   venues: Venue[];
   preferredVenueId?: number;
   error?: string;
@@ -14,6 +15,7 @@ export default function CreateGigForm({ venues, preferredVenueId, error, lead, g
   genres: string[];
   vibes: string[];
   partneredArtists?: PartnerArtist[];
+  popupCollectives?: PopupCollective[];
   role: string;
 }) {
   const [priceType, setPriceType] = useState('Free');
@@ -45,6 +47,19 @@ export default function CreateGigForm({ venues, preferredVenueId, error, lead, g
           <option value=''>Select a venue</option>
           {venues.map((v) => <option key={v.id} value={v.id}>{v.name} ({v.suburb}){!v.approved ? ' · Pending approval' : ''}</option>)}
         </select>
+      )}
+
+      {popupCollectives.length > 0 && (
+        <div className='rounded border border-zinc-700 bg-zinc-900/40 p-3 text-sm'>
+          <p className='font-medium text-zinc-200'>Presented by pop-up collective (optional)</p>
+          <p className='mb-2 text-zinc-400'>Use this when your event brand rotates between host venues.</p>
+          <select name='popup_collective_id' defaultValue='' className='w-full rounded bg-zinc-950 p-2'>
+            <option value=''>No pop-up collective</option>
+            {popupCollectives.map((collective) => (
+              <option key={collective.id} value={collective.id}>{collective.name} · {collective.region}</option>
+            ))}
+          </select>
+        </div>
       )}
 
       {role === 'artist' && (

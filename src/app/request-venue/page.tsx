@@ -48,7 +48,7 @@ export default async function RequestVenuePage({ searchParams }: { searchParams:
       {showForm && (
         <form action={requestVenueAction} className='space-y-3 rounded-xl border border-zinc-700 p-4'>
           {query.request === 'sent' && <p className='rounded bg-emerald-900/40 p-2 text-sm text-emerald-300'>Request sent to admin for approval.</p>}
-          <VenueDetailsFields />
+          <VenueDetailsFields defaultCity="" defaultState="" />
           <button className='rounded bg-zinc-100 px-4 py-2 text-zinc-900'>Send venue request</button>
         </form>
       )}
