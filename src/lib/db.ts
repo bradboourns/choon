@@ -22,6 +22,7 @@ CREATE TABLE IF NOT EXISTS user_profiles (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id INTEGER UNIQUE NOT NULL,
   display_name TEXT NOT NULL,
+  avatar_url TEXT NOT NULL DEFAULT '',
   bio TEXT NOT NULL DEFAULT '',
   location TEXT NOT NULL DEFAULT '',
   time_format TEXT NOT NULL DEFAULT '12h',
@@ -205,6 +206,9 @@ if (!venueColumns.some((column) => column.name === 'abn')) {
 const profileColumns = db.prepare('PRAGMA table_info(user_profiles)').all() as Array<{ name: string }>;
 if (!profileColumns.some((column) => column.name === 'time_format')) {
   db.exec("ALTER TABLE user_profiles ADD COLUMN time_format TEXT NOT NULL DEFAULT '12h'");
+}
+if (!profileColumns.some((column) => column.name === 'avatar_url')) {
+  db.exec("ALTER TABLE user_profiles ADD COLUMN avatar_url TEXT NOT NULL DEFAULT ''");
 }
 if (!profileColumns.some((column) => column.name === 'first_name')) {
   db.exec("ALTER TABLE user_profiles ADD COLUMN first_name TEXT NOT NULL DEFAULT ''");

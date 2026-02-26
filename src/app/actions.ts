@@ -247,6 +247,22 @@ export async function updateTimeFormatAction(formData: FormData) {
   redirect('/settings?saved=time-format');
 }
 
+export async function updateProfileAction(formData: FormData) {
+  const session = await getSession();
+  if (!session) redirect('/login');
+
+  const displayName = String(formData.get('display_name') || '').trim() || session.username;
+  const bio = String(formData.get('bio') || '').trim();
+  const location = String(formData.get('location') || '').trim();
+  const avatarUrl = String(formData.get('avatar_url') || '').trim();
+
+  db.prepare(`UPDATE user_profiles
+    SET display_name = ?, bio = ?, location = ?, avatar_url = ?, updated_at = CURRENT_TIMESTAMP
+    WHERE user_id = ?`).run(displayName, bio, location, avatarUrl, session.id);
+
+  redirect('/settings?saved=profile');
+}
+
 
 export async function updateArtistStatsVisibilityAction(formData: FormData) {
   const session = await getSession();

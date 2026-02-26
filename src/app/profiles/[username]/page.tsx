@@ -26,7 +26,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
 
   const account = db.prepare(`
     SELECT users.id, users.username, users.email, users.role, users.created_at,
-      user_profiles.display_name, user_profiles.bio, user_profiles.location
+      user_profiles.display_name, user_profiles.avatar_url, user_profiles.bio, user_profiles.location
     FROM users
     LEFT JOIN user_profiles ON user_profiles.user_id = users.id
     WHERE users.username = ?
@@ -37,6 +37,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
     role: RoleType;
     created_at: string;
     display_name: string;
+    avatar_url: string;
     bio: string;
     location: string;
   } | undefined;
@@ -46,8 +47,8 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
   const canViewEmail = session?.role === 'admin' || session?.username === account.username;
   const isOwner = session?.username === account.username;
   const displayName = account.display_name || account.username;
-  const profileCompletion = [account.display_name, account.bio, account.location].filter(Boolean).length;
-  const completionPercent = Math.round((profileCompletion / 3) * 100);
+  const profileCompletion = [account.display_name, account.avatar_url, account.bio, account.location].filter(Boolean).length;
+  const completionPercent = Math.round((profileCompletion / 4) * 100);
 
   const fanUpcoming = account.role === 'user'
     ? db.prepare(`SELECT gigs.id, gigs.artist_name, gigs.date, gigs.start_time, venues.name venue_name, venues.suburb, venues.city, gig_interest.status
@@ -171,9 +172,16 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       <div className='space-y-4'>
         <div className='flex items-start justify-between gap-3'>
           <div className='flex min-w-0 items-start gap-3'>
-            <div className='grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm font-bold'>
-              {displayName.slice(0, 2).toUpperCase()}
-            </div>
+            {account.avatar_url
+              ? <img
+                src={account.avatar_url}
+                alt={`${displayName} profile picture`}
+                className='h-12 w-12 shrink-0 rounded-xl border border-zinc-700 bg-zinc-800/80 object-cover'
+              />
+              : <div className='grid h-12 w-12 shrink-0 place-items-center rounded-xl border border-zinc-700 bg-zinc-800/80 text-sm font-bold'>
+                {displayName.slice(0, 2).toUpperCase()}
+              </div>}
+
             <div className='space-y-2'>
               <h1 className='text-2xl font-bold leading-tight sm:text-3xl'>{displayName}</h1>
               <div className='flex flex-wrap items-center gap-2'>
@@ -204,7 +212,7 @@ export default async function ProfilePage({ params }: { params: Promise<{ userna
       <div className='mt-2 h-2 overflow-hidden rounded-full bg-zinc-800'>
         <div className='h-full rounded-full bg-violet-500' style={{ width: `${completionPercent}%` }} />
       </div>
-      <p className='mt-2 text-xs text-zinc-400'>Add display name, bio, and location in settings to strengthen trust signals.</p>
+      <p className='mt-2 text-xs text-zinc-400'>Add display name, profile picture, bio, and location in settings to strengthen trust signals.</p>
     </section>}
 
     {account.role === 'venue_admin' && (

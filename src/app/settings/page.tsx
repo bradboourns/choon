@@ -1,14 +1,14 @@
 import { getSession } from '@/lib/auth';
 import db from '@/lib/db';
 import { redirect } from 'next/navigation';
-import { updateArtistStatsVisibilityAction, updateTimeFormatAction } from '../actions';
+import { updateArtistStatsVisibilityAction, updateProfileAction, updateTimeFormatAction } from '../actions';
 
 export default async function SettingsPage() {
   const session = await getSession();
   if (!session) redirect('/login');
 
-  const profile = db.prepare('SELECT display_name, bio, location, time_format FROM user_profiles WHERE user_id = ?').get(session.id) as
-    | { display_name: string; bio: string; location: string; time_format: '12h' | '24h' }
+  const profile = db.prepare('SELECT display_name, avatar_url, bio, location, time_format FROM user_profiles WHERE user_id = ?').get(session.id) as
+    | { display_name: string; avatar_url: string; bio: string; location: string; time_format: '12h' | '24h' }
     | undefined;
 
   const artistSettings = session.role === 'artist'
@@ -26,10 +26,33 @@ export default async function SettingsPage() {
         <p className='text-zinc-300'>Role: {session.role}</p>
       </section>
       <section className='rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
-        <h2 className='text-lg font-semibold'>Profile snapshot</h2>
-        <p className='mt-2 text-zinc-300'>Display name: {profile?.display_name || 'Not set'}</p>
-        <p className='text-zinc-300'>Location: {profile?.location || 'Gold Coast'}</p>
-        <p className='text-zinc-300'>Bio: {profile?.bio || 'No bio yet.'}</p>
+        <h2 className='text-lg font-semibold'>Profile details</h2>
+        <p className='mt-2 text-sm text-zinc-400'>Keep this up to date as your music taste, city, or brand changes over time.</p>
+        <form action={updateProfileAction} className='mt-3 grid gap-3 sm:max-w-2xl'>
+          <label className='space-y-1 text-sm'>
+            <span className='text-zinc-300'>Display name</span>
+            <input name='display_name' defaultValue={profile?.display_name || ''} className='w-full rounded bg-zinc-800 px-3 py-2' />
+          </label>
+          <label className='space-y-1 text-sm'>
+            <span className='text-zinc-300'>Profile picture URL</span>
+            <input
+              type='url'
+              name='avatar_url'
+              placeholder='https://...'
+              defaultValue={profile?.avatar_url || ''}
+              className='w-full rounded bg-zinc-800 px-3 py-2'
+            />
+          </label>
+          <label className='space-y-1 text-sm'>
+            <span className='text-zinc-300'>Location</span>
+            <input name='location' defaultValue={profile?.location || ''} className='w-full rounded bg-zinc-800 px-3 py-2' />
+          </label>
+          <label className='space-y-1 text-sm'>
+            <span className='text-zinc-300'>Bio</span>
+            <textarea name='bio' rows={4} defaultValue={profile?.bio || ''} className='w-full rounded bg-zinc-800 px-3 py-2' />
+          </label>
+          <button className='w-fit rounded bg-violet-600 px-3 py-2 text-sm'>Save profile</button>
+        </form>
       </section>
       <section className='rounded-2xl border border-zinc-700 bg-zinc-900/50 p-4'>
         <h2 className='text-lg font-semibold'>Notifications</h2>
