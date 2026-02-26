@@ -43,9 +43,12 @@ export default function AccountMenu({ canPostGig, isVenueAdmin, username }: { ca
       <button
         type='button'
         onClick={() => setOpen((current) => !current)}
-        className='rounded-full border border-zinc-700 px-3 py-1.5 hover:bg-zinc-900'
+        className='inline-flex items-center gap-2 rounded-full border border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-900'
       >
-        Account
+        <span className='grid h-6 w-6 place-items-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-200'>
+          {username.slice(0, 1).toUpperCase()}
+        </span>
+        <span className='max-w-24 truncate text-sm'>{username}</span>
       </button>
       {open && (
         <div className='absolute right-0 mt-2 min-w-44 rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl'>
