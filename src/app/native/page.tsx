@@ -1,5 +1,5 @@
 import NativeBlueprint from '@/components/native/NativeBlueprint';
 
-export default function Home() {
+export default function NativePage() {
   return <NativeBlueprint />;
 }

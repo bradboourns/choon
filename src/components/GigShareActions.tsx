@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, type ReactElement } from 'react';
 
 type Props = {
   gigId: number;
@@ -11,7 +11,7 @@ type Props = {
 type SocialTarget = {
   name: string;
   href: string;
-  icon: JSX.Element;
+  icon: ReactElement;
   external?: boolean;
 };
 
@@ -102,7 +102,7 @@ export default function GigShareActions({ gigId, artistName, venueName }: Props)
   return (
     <div className='mt-4 space-y-3'>
       <div className='flex flex-wrap gap-2'>
-        {typeof navigator !== 'undefined' && navigator.share && (
+        {typeof navigator !== 'undefined' && 'share' in navigator && (
           <button type='button' onClick={handleNativeShare} className='inline-flex items-center gap-2 rounded-xl border border-zinc-600 px-4 py-2'>
             <Icon path='M18 16.08c-.76 0-1.44.3-1.96.77L8.91 12.7a2.9 2.9 0 0 0 0-1.39l7-4.11A2.99 2.99 0 1 0 14 5a3 3 0 0 0 .04.49l-7.01 4.12a3 3 0 1 0 0 4.78l7.05 4.14A3 3 0 1 0 18 16.08z' />
             Share…
