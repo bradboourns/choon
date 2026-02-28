@@ -1,35 +1,19 @@
-import { redirect } from 'next/navigation';
-import HomeFeed from '@/components/HomeFeed';
-import { getSession } from '@/lib/auth';
-import { getGigs } from '@/lib/data';
-import db from '@/lib/db';
+import Link from 'next/link';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
-export default async function Home() {
-  const session = await getSession();
-  if (session?.role === 'admin') redirect('/dashboard');
-
-  const gigs = getGigs();
-
-  const savedGigIds = session
-    ? (db.prepare('SELECT gig_id FROM saved_gigs WHERE user_id = ?').all(session.id) as Array<{ gig_id: number }>).map((row) => row.gig_id)
-    : [];
-
-  const interestRows = session
-    ? (db
-        .prepare("SELECT gig_id, status FROM gig_interest WHERE user_id = ? AND status IN ('interested', 'going')")
-        .all(session.id) as Array<{ gig_id: number; status: 'interested' | 'going' }>)
-    : [];
-
-  const followedArtistIds = session
-    ? (db.prepare('SELECT artist_id FROM artist_follows WHERE user_id = ?').all(session.id) as Array<{ artist_id: number }>).map((row) => row.artist_id)
-    : [];
-
-  const interestByGig = Object.fromEntries(interestRows.map((row) => [row.gig_id, row.status]));
-
-  const fanHomeCity = session
-    ? (db.prepare('SELECT home_city FROM user_profiles WHERE user_id = ?').get(session.id) as { home_city: string } | undefined)?.home_city || ''
-    : '';
-  const defaultCity = fanHomeCity || 'Gold Coast';
-
-  return <HomeFeed initial={gigs} isLoggedIn={Boolean(session)} savedGigIds={savedGigIds} interestByGig={interestByGig} followedArtistIds={followedArtistIds} defaultCity={defaultCity} />;
+export default function Landing() {
+  return (
+    <main className="app-shell app-content page-transition space-y-4">
+      <Card>
+        <p className="text-xs text-[var(--color-text-secondary)]">Choon beta</p>
+        <h1 className="mt-2 text-2xl font-bold">Live music discovery, built for mobile-first flow.</h1>
+        <p className="mt-2 text-sm text-[var(--color-text-secondary)]">Choose a native-like account experience.</p>
+      </Card>
+      <Link href="/fan/onboarding"><Button>Fan onboarding</Button></Link>
+      <Link href="/artist/dashboard"><Button variant="secondary">Artist dashboard</Button></Link>
+      <Link href="/venue-admin/calendar"><Button variant="secondary">Venue calendar</Button></Link>
+      <Link href="/docs/mobile-architecture"><Button variant="ghost">Architecture output</Button></Link>
+    </main>
+  );
 }

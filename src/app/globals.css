@@ -1,7 +1,89 @@
 @import "tailwindcss";
 
-:root { color-scheme: dark; }
-body { font-family: Inter, system-ui, sans-serif; }
+:root {
+  color-scheme: dark;
+  --color-bg: #0b0d12;
+  --color-surface: #121622;
+  --color-elevated: #1a2030;
+  --color-text-primary: #f8fafc;
+  --color-text-secondary: #9aa4b2;
+  --color-border: #273043;
+  --color-accent: #7c8cff;
+  --color-success: #26c281;
+  --color-warn: #ffb020;
+  --color-error: #ff4d67;
+
+  --font-size-xs: 12px;
+  --font-size-sm: 14px;
+  --font-size-md: 16px;
+  --font-size-lg: 20px;
+  --font-size-xl: 28px;
+
+  --line-tight: 1.2;
+  --line-base: 1.45;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius-sm: 10px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  --elev-1: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; }
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: var(--color-bg);
+  color: var(--color-text-primary);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+}
+
+body { overscroll-behavior-y: none; }
+
+a { color: inherit; text-decoration: none; }
+
+input, select, textarea {
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 640px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, rgba(255, 255, 255, 0) 30%), var(--color-bg);
+}
+
+.app-content {
+  padding: calc(var(--space-4) + var(--safe-top)) var(--space-4) calc(88px + var(--safe-bottom));
+}
+
+.page-transition {
+  animation: page-enter 260ms ease;
+}
+
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .leaflet-container { font: inherit; }
-a { color: inherit; }
-input, select, textarea { border: 1px solid #3f3f46; }
