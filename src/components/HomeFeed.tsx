@@ -4,6 +4,7 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { formatDateDDMMYYYY, formatTime } from '@/lib/format';
+import GigInterestButtons from '@/components/GigInterestButtons';
 
 const GigMap = dynamic(() => import('./GigMap'), { ssr: false });
 const defaultMapCenter = { lat: -28.0167, lng: 153.4 };
@@ -262,18 +263,7 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
                         <input type="hidden" name="redirect_to" value="/" />
                         <button className="inline-flex items-center gap-1.5 rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800"><Icon path='M6 4h12a1 1 0 0 1 1 1v15l-7-4-7 4V5a1 1 0 0 1 1-1Z' />{saved ? 'Saved' : 'Save gig'}</button>
                       </form>
-                      <form action="/api/gig-interest" method="post">
-                        <input type="hidden" name="gig_id" value={g.id} />
-                        <input type="hidden" name="status" value={interest === 'interested' ? 'none' : 'interested'} />
-                        <input type="hidden" name="redirect_to" value="/" />
-                        <button className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 ${interest === 'interested' ? 'border-violet-400 bg-violet-600/40' : 'border-zinc-600 hover:bg-zinc-800'}`}><Icon path='m12 3 2.8 5.6 6.2.9-4.5 4.4 1.1 6.1L12 17.2 6.4 20l1.1-6.1L3 9.5l6.2-.9L12 3Z' />Interested</button>
-                      </form>
-                      <form action="/api/gig-interest" method="post">
-                        <input type="hidden" name="gig_id" value={g.id} />
-                        <input type="hidden" name="status" value={interest === 'going' ? 'none' : 'going'} />
-                        <input type="hidden" name="redirect_to" value="/" />
-                        <button className={`inline-flex items-center gap-1.5 rounded border px-2.5 py-1.5 ${interest === 'going' ? 'border-emerald-400 bg-emerald-500/30' : 'border-zinc-600 hover:bg-zinc-800'}`}><Icon path='m5 12 4 4L19 6' />Going</button>
-                      </form>
+                      <GigInterestButtons gigId={g.id} initialStatus={interest as 'interested' | 'going' | 'none'} compact />
                       {g.artist_id && (
                         <form action="/api/follow-artist" method="post">
                           <input type="hidden" name="artist_id" value={g.artist_id} />
