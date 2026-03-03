@@ -139,9 +139,10 @@ export default async function GigPage({ params }: { params: Promise<{ id: string
           Tickets
         </a>
       )}
-      <div className='mt-4'>
-        <Link href={`/venues/${gig.venue_id}`} className='inline-flex rounded-xl border border-zinc-600 px-4 py-2 hover:bg-zinc-800'>View venue profile</Link>
-      </div>
+      <Link href={`/venues/${gig.venue_id}`} className='mt-4 flex items-center justify-between rounded-xl border border-zinc-700/70 px-4 py-3 text-zinc-300 transition hover:border-violet-400/60 hover:bg-zinc-800/60 hover:text-zinc-100'>
+        <span className='text-sm'>Explore venue profile</span>
+        <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d='m9 6 6 6-6 6' /></svg>
+      </Link>
     </section>
   </article>;
 }
