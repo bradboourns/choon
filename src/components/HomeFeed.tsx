@@ -7,6 +7,12 @@ import { formatDateDDMMYYYY, formatTime } from '@/lib/format';
 import GigInterestButtons from '@/components/GigInterestButtons';
 import SaveGigButton from '@/components/SaveGigButton';
 import FollowArtistButton from '@/components/FollowArtistButton';
+import Badge from '@/components/ui/Badge';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import SegmentedControl from '@/components/ui/SegmentedControl';
+import Select from '@/components/ui/Select';
 
 const GigMap = dynamic(() => import('./GigMap'), { ssr: false });
 const defaultMapCenter = { lat: -28.0167, lng: 153.4 };
@@ -43,12 +49,9 @@ function distanceKm(a: { lat: number; lng: number }, b: { lat: number; lng: numb
   const R = 6371;
   const dLat = ((b.lat - a.lat) * Math.PI) / 180;
   const dLng = ((b.lng - a.lng) * Math.PI) / 180;
-  const x =
-    Math.sin(dLat / 2) ** 2 +
-    Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  const x = Math.sin(dLat / 2) ** 2 + Math.cos((a.lat * Math.PI) / 180) * Math.cos((b.lat * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
   return R * 2 * Math.atan2(Math.sqrt(x), Math.sqrt(1 - x));
 }
-
 
 function Icon({ path }: { path: string }) {
   return <svg aria-hidden viewBox='0 0 24 24' className='h-4 w-4 fill-none stroke-current stroke-2'><path d={path} /></svg>;
@@ -75,9 +78,9 @@ function cityDefaultCenter(city: string) {
   const key = city.trim().toLowerCase();
   const centers: Record<string, { lat: number; lng: number }> = {
     'gold coast': { lat: -28.0167, lng: 153.4 },
-    'brisbane': { lat: -27.4698, lng: 153.0251 },
-    'sydney': { lat: -33.8688, lng: 151.2093 },
-    'melbourne': { lat: -37.8136, lng: 144.9631 },
+    brisbane: { lat: -27.4698, lng: 153.0251 },
+    sydney: { lat: -33.8688, lng: 151.2093 },
+    melbourne: { lat: -37.8136, lng: 144.9631 },
   };
   return centers[key] || defaultMapCenter;
 }
@@ -88,7 +91,7 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
   const [price, setPrice] = useState('');
   const [dateRange, setDateRange] = useState<(typeof dateTabs)[number]['key']>('all');
   const [loc, setLoc] = useState<{ lat: number; lng: number } | null>(null);
-  const [mapCenter, setMapCenter] = useState(cityDefaultCenter(defaultCity));
+  const mapCenter = useMemo(() => cityDefaultCenter(defaultCity), [defaultCity]);
   const [distanceRangeKm, setDistanceRangeKm] = useState(25);
   const [distanceSort, setDistanceSort] = useState<'date' | 'closest' | 'furthest'>('date');
 
@@ -134,99 +137,51 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
       return matchesSearch && matchesPrice && matchesDate && matchesDistance;
     });
 
-    if (distanceSort === 'closest') {
-      return [...filtered].sort((a, b) => a.distance - b.distance);
-    }
-    if (distanceSort === 'furthest') {
-      return [...filtered].sort((a, b) => b.distance - a.distance);
-    }
-    return [...filtered].sort((a, b) => {
-      const da = `${a.date} ${a.start_time}`;
-      const db = `${b.date} ${b.start_time}`;
-      return da.localeCompare(db);
-    });
+    if (distanceSort === 'closest') return [...filtered].sort((a, b) => a.distance - b.distance);
+    if (distanceSort === 'furthest') return [...filtered].sort((a, b) => b.distance - a.distance);
+    return [...filtered].sort((a, b) => `${a.date} ${a.start_time}`.localeCompare(`${b.date} ${b.start_time}`));
   }, [initial, search, price, dateRange, today, loc, mapCenter, distanceRangeKm, distanceSort]);
 
   return (
-    <div className="space-y-5">
-      <section className="rounded-3xl border border-violet-500/20 bg-gradient-to-r from-zinc-900 via-zinc-900 to-violet-950/70 p-5 shadow-2xl shadow-violet-900/10 md:p-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex-1 rounded-2xl bg-zinc-950/70 p-3 ring-1 ring-inset ring-white/10 transition focus-within:ring-violet-400/60">
-            <input
-              placeholder="Search venues, artists, suburbs..."
-              className="w-full bg-transparent text-base outline-none"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          <button
-            className="rounded-2xl border border-zinc-700 bg-zinc-900 px-4 py-3 text-sm hover:bg-zinc-800"
-            onClick={() =>
-              navigator.geolocation.getCurrentPosition((p) => {
-                const current = { lat: p.coords.latitude, lng: p.coords.longitude };
-                setLoc(current);
-                setMapCenter(current);
-              })
-            }
-          >
+    <div className='space-y-5'>
+      <Card variant='glass' className='space-y-4 bg-gradient-to-r from-violet-950/30 via-transparent to-fuchsia-950/20'>
+        <div className='grid gap-3 md:grid-cols-[1fr_auto]'>
+          <Input value={search} onChange={(e) => setSearch(e.target.value)} placeholder='Search artists, venues, suburbs or city' />
+          <Button variant='subtle' onClick={() => navigator.geolocation.getCurrentPosition((p) => setLoc({ lat: p.coords.latitude, lng: p.coords.longitude }))}>
             Use my location
-          </button>
+          </Button>
         </div>
 
-        <p className="mt-3 text-sm text-zinc-300">{loc ? 'Distances are calculated from your current location.' : `Defaulting map and search to ${defaultCity || 'Gold Coast'} until location is enabled.`}</p>
-        <p className="mt-1 text-xs text-zinc-400">Map radius always matches the selected distance filter.</p>
-
-        <div className="mt-4 flex flex-wrap gap-2">
+        <div className='flex flex-wrap gap-2'>
           {dateTabs.map((item) => (
-            <button
-              key={item.key}
-              onClick={() => setDateRange(item.key)}
-              className={`rounded-full border px-4 py-2 text-sm transition ${
-                dateRange === item.key
-                  ? 'border-violet-400 bg-violet-600 font-semibold text-white'
-                  : 'border-zinc-700 bg-zinc-900/80 text-zinc-200 hover:bg-zinc-800'
-              }`}
-            >
+            <button key={item.key} onClick={() => setDateRange(item.key)} className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${dateRange === item.key ? 'border-violet-400/60 bg-violet-500/20 text-violet-100' : 'border-[var(--border-subtle)] text-[var(--text-secondary)] hover:text-[var(--text-primary)]'}`}>
               {item.label}
             </button>
           ))}
         </div>
 
-        <div className="mt-3 flex flex-wrap gap-2">
-          <select className="rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm" value={price} onChange={(e) => setPrice(e.target.value)}>
-            <option value="">All prices</option>
-            <option value="Free">Free</option>
-            <option value="Door">At the door</option>
-            <option value="Ticketed">Ticketed</option>
-          </select>
-          <label className="flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-900/70 px-4 py-2 text-sm text-zinc-300">
-            Within
-            <select className="rounded bg-zinc-800 px-2 py-1" value={distanceRangeKm} onChange={(e) => setDistanceRangeKm(Number(e.target.value))}>
-              {[5, 10, 15, 25, 40, 60, 100].map((km) => (
-                <option key={km} value={km}>{km} km</option>
-              ))}
-            </select>
-          </label>
-          <select className="rounded-full border border-zinc-700 bg-zinc-900 px-4 py-2 text-sm" value={distanceSort} onChange={(e) => setDistanceSort(e.target.value as 'date' | 'closest' | 'furthest')}>
-            <option value="date">Sort: Soonest</option>
-            <option value="closest">Sort: Closest</option>
-            <option value="furthest">Sort: Furthest</option>
-          </select>
+        <div className='grid gap-2 md:grid-cols-3'>
+          <Select value={price} onChange={(e) => setPrice(e.target.value)}>
+            <option value=''>All prices</option><option value='Free'>Free</option><option value='Door'>At the door</option><option value='Ticketed'>Ticketed</option>
+          </Select>
+          <Select value={distanceRangeKm} onChange={(e) => setDistanceRangeKm(Number(e.target.value))}>
+            {[5, 10, 15, 25, 40, 60, 100].map((km) => <option key={km} value={km}>Within {km} km</option>)}
+          </Select>
+          <Select value={distanceSort} onChange={(e) => setDistanceSort(e.target.value as 'date' | 'closest' | 'furthest')}>
+            <option value='date'>Sort: Soonest</option><option value='closest'>Sort: Closest</option><option value='furthest'>Sort: Furthest</option>
+          </Select>
         </div>
-      </section>
+      </Card>
 
-      <div className="flex justify-between gap-2">
-        <p className="text-sm text-zinc-400">{gigs.length} gigs found</p>
-        <div className="flex rounded-2xl border border-zinc-700 bg-zinc-900 p-1">
-          <button className={`rounded-xl px-3 py-1.5 text-sm ${tab === 'list' ? 'bg-violet-600 font-semibold' : 'text-zinc-300'}`} onClick={() => setTab('list')}>List</button>
-          <button className={`rounded-xl px-3 py-1.5 text-sm ${tab === 'map' ? 'bg-violet-600 font-semibold' : 'text-zinc-300'}`} onClick={() => setTab('map')}>Map</button>
-        </div>
+      <div className='flex items-center justify-between gap-3'>
+        <p className='text-sm text-[var(--text-secondary)]'>{gigs.length} gigs found</p>
+        <SegmentedControl value={tab} onChange={setTab} items={[{ key: 'list', label: 'List' }, { key: 'map', label: 'Map' }]} />
       </div>
 
       {tab === 'map' ? (
         <GigMap gigs={gigs} center={loc || mapCenter} radiusKm={distanceRangeKm} />
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        <div className='grid gap-4 md:grid-cols-2 xl:grid-cols-3'>
           {gigs.map((g) => {
             const genres = JSON.parse(g.genres) as string[];
             const vibes = JSON.parse(g.vibe_tags) as string[];
@@ -235,41 +190,42 @@ export default function HomeFeed({ initial, isLoggedIn, savedGigIds, interestByG
             const followingArtist = g.artist_id ? followedArtistIds.includes(g.artist_id) : false;
 
             return (
-              <div key={g.id} className="overflow-hidden rounded-3xl border border-zinc-800 bg-zinc-900/50 transition hover:-translate-y-0.5 hover:border-violet-500/50 hover:shadow-xl hover:shadow-violet-900/20">
-                <Link href={`/gigs/${g.id}`} className="block">
-                  <div className="relative h-40 border-b border-zinc-800 bg-gradient-to-br from-violet-950/70 via-zinc-900 to-fuchsia-950/50 p-4">
-                    <span className="rounded-lg bg-black/45 px-2.5 py-1 text-xs font-semibold text-zinc-200">{formatDateDDMMYYYY(g.date)}</span>
-                    <span className="absolute bottom-4 right-4 rounded-lg border border-violet-400/40 bg-violet-600/30 px-2.5 py-1 text-xs font-semibold text-violet-100">
+              <Card key={g.id} variant='elevated' className='overflow-hidden p-0 transition hover:-translate-y-0.5 hover:border-violet-400/40'>
+                <Link href={`/gigs/${g.id}`} className='block'>
+                  <div className='relative h-40 border-b border-[var(--border-subtle)] bg-gradient-to-br from-violet-900/40 via-zinc-900 to-fuchsia-900/30 p-4'>
+                    <Badge variant='status'>{formatDateDDMMYYYY(g.date)}</Badge>
+                    <span className='absolute bottom-4 right-4 rounded-full border border-violet-300/30 bg-violet-600/25 px-3 py-1 text-xs font-semibold text-violet-100'>
                       {g.price_type === 'Door' ? `$${(g.ticket_price ?? 0).toFixed(2)} at door` : g.price_type === 'Free' ? 'Free' : `From $${(g.ticket_price ?? 0).toFixed(2)}`}
                     </span>
                   </div>
-                  <div className="space-y-2 p-4">
-                    <p className="text-2xl font-bold leading-tight">{g.artist_name}</p>
-                    <p className="text-zinc-300">{g.venue_name} · {g.suburb}</p>
-                    <p className="text-zinc-400">{formatTime(g.start_time, '12h')}</p>
-                    <p className="text-sm text-zinc-400">{g.distance.toFixed(1)} km away</p>
-                    <div className="flex flex-wrap gap-2 pt-1 text-xs">
-                      {genres.map((x) => (<span key={x} className="rounded-lg border border-zinc-700 bg-zinc-800/70 px-2 py-1 text-zinc-200">{x}</span>))}
-                      {vibes.map((x) => (<span key={x} className="rounded-lg border border-violet-500/40 bg-violet-600/20 px-2 py-1 text-violet-200">{x}</span>))}
+                  <div className='space-y-3 p-4'>
+                    <div>
+                      <p className='text-2xl font-bold leading-tight'>{g.artist_name}</p>
+                      <p className='text-sm text-[var(--text-secondary)]'>{g.venue_name} · {g.suburb}</p>
+                    </div>
+                    <div className='flex items-center justify-between text-sm text-[var(--text-tertiary)]'>
+                      <span>{formatTime(g.start_time, '12h')}</span>
+                      <span>{g.distance.toFixed(1)} km away</span>
+                    </div>
+                    <div className='flex flex-wrap gap-1.5'>
+                      {genres.map((x) => <Badge key={x} variant='genre'>{x}</Badge>)}
+                      {vibes.map((x) => <Badge key={x} variant='vibe'>{x}</Badge>)}
                     </div>
                   </div>
                 </Link>
-
-                <div className="flex flex-wrap gap-2 border-t border-zinc-800 px-4 py-3 text-sm">
-                  <a className="inline-flex items-center gap-1.5 rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800" href={`https://maps.google.com/?q=${encodeURIComponent(`${g.address}, ${g.suburb}, ${g.city}`)}`} target="_blank" rel="noreferrer"><Icon path='M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z M12 10h.01' />Directions</a>
+                <div className='flex flex-wrap gap-2 border-t border-[var(--border-subtle)] px-4 py-3 text-sm'>
+                  <a className='inline-flex items-center gap-1.5 rounded-xl border border-[var(--border-subtle)] px-3 py-1.5 hover:bg-[var(--surface-muted)]' href={`https://maps.google.com/?q=${encodeURIComponent(`${g.address}, ${g.suburb}, ${g.city}`)}`} target='_blank' rel='noreferrer'><Icon path='M12 21s7-6 7-11a7 7 0 1 0-14 0c0 5 7 11 7 11Z M12 10h.01' />Directions</a>
                   {isLoggedIn ? (
                     <>
                       <SaveGigButton gigId={g.id} initiallySaved={saved} compact />
                       <GigInterestButtons gigId={g.id} initialStatus={interest as 'interested' | 'going' | 'none'} compact />
-                      {g.artist_id && (
-                        <FollowArtistButton artistId={g.artist_id} initiallyFollowing={followingArtist} compact />
-                      )}
+                      {g.artist_id && <FollowArtistButton artistId={g.artist_id} initiallyFollowing={followingArtist} compact />}
                     </>
                   ) : (
-                    <Link className="rounded border border-zinc-600 px-2.5 py-1.5 hover:bg-zinc-800" href="/login">Log in to save / follow</Link>
+                    <Link className='rounded-xl border border-[var(--border-subtle)] px-3 py-1.5 hover:bg-[var(--surface-muted)]' href='/login'>Log in to save / follow</Link>
                   )}
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>

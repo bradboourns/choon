@@ -13,9 +13,7 @@ export default function AccountMenu({ canPostGig, isVenueAdmin, username, role }
 
   useEffect(() => {
     function handlePointerDown(event: MouseEvent) {
-      if (!containerRef.current?.contains(event.target as Node)) {
-        setOpen(false);
-      }
+      if (!containerRef.current?.contains(event.target as Node)) setOpen(false);
     }
 
     document.addEventListener('mousedown', handlePointerDown);
@@ -31,10 +29,7 @@ export default function AccountMenu({ canPostGig, isVenueAdmin, username, role }
       return;
     }
 
-    closeTimeoutRef.current = setTimeout(() => {
-      setOpen(false);
-    }, 8000);
-
+    closeTimeoutRef.current = setTimeout(() => setOpen(false), 8000);
     return () => {
       if (closeTimeoutRef.current) clearTimeout(closeTimeoutRef.current);
     };
@@ -42,27 +37,22 @@ export default function AccountMenu({ canPostGig, isVenueAdmin, username, role }
 
   return (
     <div ref={containerRef} className='relative'>
-      <button
-        type='button'
-        onClick={() => setOpen((current) => !current)}
-        className='inline-flex items-center gap-2 rounded-full border border-zinc-700 px-2.5 py-1.5 hover:bg-zinc-900'
-      >
-        <span className='grid h-6 w-6 place-items-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-200'>
-          {username.slice(0, 1).toUpperCase()}
-        </span>
+      <button type='button' onClick={() => setOpen((current) => !current)} className='inline-flex items-center gap-2 rounded-full border border-[var(--border-subtle)] bg-[var(--surface-secondary)] px-2.5 py-1.5 hover:border-violet-400/40'>
+        <span className='grid h-7 w-7 place-items-center rounded-full bg-violet-500/20 text-xs font-semibold text-violet-100'>{username.slice(0, 1).toUpperCase()}</span>
         <span className='max-w-24 truncate text-sm'>{username}</span>
       </button>
       {open && (
-        <div className='absolute right-0 mt-2 min-w-44 rounded-xl border border-zinc-700 bg-zinc-900 p-1 shadow-xl'>
-          <Link onClick={() => setOpen(false)} href={`/profiles/${username}`} className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Profile</Link>
-          <Link onClick={() => setOpen(false)} href='/dashboard' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Dashboard</Link>
-          {role !== 'user' && <Link onClick={() => setOpen(false)} href='/analytics' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Analytics {role === 'admin' ? '(coming soon)' : '(beta)'}</Link>}
-          <Link onClick={() => setOpen(false)} href='/settings' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Settings</Link>
-          {canPostGig && <Link onClick={() => setOpen(false)} href='/create-gig' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Post gig</Link>}
-          {isVenueAdmin && <Link onClick={() => setOpen(false)} href='/request-venue' className='block rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Request venue</Link>}
-          <form action={logoutAction}>
-            <button className='w-full rounded-lg px-3 py-2 text-left hover:bg-zinc-800'>Log out</button>
-          </form>
+        <div className='absolute right-0 mt-2 min-w-52 space-y-1 rounded-2xl border border-white/10 bg-[var(--surface-glass)] p-1.5 backdrop-blur-xl shadow-[var(--shadow-md)]'>
+          <p className='px-3 pt-2 text-[11px] uppercase tracking-[0.16em] text-[var(--text-tertiary)]'>Account</p>
+          <Link onClick={() => setOpen(false)} href={`/profiles/${username}`} className='block rounded-xl px-3 py-2 text-left text-sm hover:bg-white/5'>Profile</Link>
+          <Link onClick={() => setOpen(false)} href='/dashboard' className='block rounded-xl px-3 py-2 text-left text-sm hover:bg-white/5'>Dashboard</Link>
+          {role !== 'user' && <Link onClick={() => setOpen(false)} href='/analytics' className='block rounded-xl px-3 py-2 text-left text-sm hover:bg-white/5'>Analytics {role === 'admin' ? '(coming soon)' : '(beta)'}</Link>}
+          <Link onClick={() => setOpen(false)} href='/settings' className='block rounded-xl px-3 py-2 text-left text-sm hover:bg-white/5'>Settings</Link>
+          {canPostGig && <Link onClick={() => setOpen(false)} href='/create-gig' className='block rounded-xl px-3 py-2 text-left text-sm hover:bg-white/5'>Post gig</Link>}
+          {isVenueAdmin && <Link onClick={() => setOpen(false)} href='/request-venue' className='block rounded-xl px-3 py-2 text-left text-sm hover:bg-white/5'>Request venue</Link>}
+          <div className='border-t border-white/10 pt-1'>
+            <form action={logoutAction}><button className='w-full rounded-xl px-3 py-2 text-left text-sm text-rose-200 hover:bg-rose-500/15'>Log out</button></form>
+          </div>
         </div>
       )}
     </div>
